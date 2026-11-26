@@ -75,6 +75,12 @@ export function GuidePage() {
           </p>
         </details>
         <details className="card">
+          <summary>番組の検索で出てこない番組がある</summary>
+          <p>
+            番組登録の「Podcast/番組を検索」は、<strong>Podcast で配信されている番組だけ</strong>が候補に出ます。radiko でしか聴けない番組などは出てこないので、番組名を手入力してください。一度登録すれば、次からは選ぶだけで済みます。
+          </p>
+        </details>
+        <details className="card">
           <summary>同じ番組の別の週を追加できる？</summary>
           <p>できます。放送日が違えば別の回として保存されます。同じ番組・同じ放送日のときだけ確認が出ます。</p>
         </details>

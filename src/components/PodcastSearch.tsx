@@ -50,6 +50,9 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
 
   return (
     <div className="assist-panel">
+      <p className="assist-note">
+        ※ Podcast で配信されている番組だけが候補に出ます。radiko でしか聴けない番組などは出ないので、そのときは番組名を手入力してください。
+      </p>
       <div className="assist-row">
         <input
           className="input"
@@ -74,7 +77,7 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
       {error && <p className="field-error">{error}</p>}
       {results && !loading && (
         results.length === 0 ? (
-          <p className="muted">見つかりませんでした。番組名を手入力してください。</p>
+          <p className="muted">見つかりませんでした。Podcast 配信のない番組（radiko のみ等）は出てこないので、番組名を手入力してください。一度登録すれば次からは選ぶだけです。</p>
         ) : (
           <ul className="suggest assist-results">
             {results.map((r) => (

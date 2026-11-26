@@ -1616,3 +1616,10 @@ a.card:active {
   font-weight: 800;
   border-color: var(--ink);
 }
+
+.assist-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b4e05;
+}

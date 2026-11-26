@@ -2660,3 +2660,11 @@ html[data-theme="night"] .home-night-road {
   border-color: var(--rust);
   box-shadow: 0 0 0 2px var(--rust);
 }
+
+/* 並び替えが5つになったので、横スクロールではなく折り返して全部見えるように */
+.sort-bar {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  margin: 0;
+  padding: 2px 0 10px;
+}

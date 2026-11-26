@@ -1,0 +1,243 @@
+/**
+ * データアクセス層。整合性が必要な操作はすべて1トランザクションで実行する。
+ */
+import { IDX, STORE_NAMES, withTx } from './idb';
+import type {
+  DataSnapshot,
+  EpisodeAppearance,
+  EpisodeLog,
+  EpisodeLogInput,
+  Person,
+  PersonInput,
+  Program,
+  ProgramInput,
+} from './types';
+import { cleanAliases, cleanName, isValidYmd, newId, nowIso } from '../lib/util';
+
+/** ユーザーに見せる前提のエラー */
+export class AppError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+export interface PersonUsage {
+  /** 基本パーソナリティとして登録している番組名 */
+  defaultOfPrograms: string[];
+  /** 出演ログ件数（合計） */
+  logCount: number;
+  /** 番組別の出演ログ件数 */
+  logsByProgram: { programName: string; count: number }[];
+}
+
+export class PersonInUseError extends AppError {
+  constructor(
+    public readonly personName: string,
+    public readonly usage: PersonUsage,
+  ) {
+    super(`「${personName}」は参照されているため削除できません。`);
+    this.name = 'PersonInUseError';
+  }
+}
+
+export class ProgramInUseError extends AppError {
+  constructor(
+    public readonly programName: string,
+    public readonly logCount: number,
+  ) {
+    super(`「${programName}」にはリピート回が${logCount}件記録されているため削除できません。先にリピート回を削除してください。`);
+    this.name = 'ProgramInUseError';
+  }
+}
+
+// ---------------------------------------------------------------- 読み込み
+
+export function loadSnapshot(): Promise<DataSnapshot> {
+  return withTx(STORE_NAMES, 'readonly', async (tx) => {
+    const [programs, persons, episodeLogs, episodeAppearances] = await Promise.all([
+      tx.store('programs').getAll(),
+      tx.store('persons').getAll(),
+      tx.store('episodeLogs').getAll(),
+      tx.store('episodeAppearances').getAll(),
+    ]);
+    return { programs, persons, episodeLogs, episodeAppearances };
+  });
+}
+
+/** 同一番組・同一放送日のログ（excludeId は除外） */
+export function findSameDayLogs(programId: string, broadcastDate: string, excludeId?: string): Promise<EpisodeLog[]> {
+  return withTx(['episodeLogs'], 'readonly', async (tx) => {
+    const list = await tx.store('episodeLogs').getAllByIndex(IDX.logsByProgramDate, [programId, broadcastDate]);
+    return list.filter((l) => l.id !== excludeId);
+  });
+}
+
+// ---------------------------------------------------------------- 番組
+
+export function saveProgram(input: ProgramInput): Promise<Program> {
+  const name = cleanName(input.name);
+  if (!name) return Promise.reject(new AppError('番組名を入力してください。'));
+  const station = cleanName(input.station);
+  const defaultPersonIds = Array.from(new Set(input.defaultPersonIds));
+
+  return withTx(['programs', 'persons'], 'readwrite', async (tx) => {
+    for (const pid of defaultPersonIds) {
+      if (!(await tx.store('persons').get(pid))) throw new AppError('存在しない人物が含まれています。画面を再読み込みしてください。');
+    }
+    const now = nowIso();
+    const existing = input.id ? await tx.store('programs').get(input.id) : undefined;
+    if (input.id && !existing) throw new AppError('番組が見つかりません（削除された可能性があります）。');
+    const program: Program = {
+      id: existing?.id ?? newId(),
+      name,
+      station,
+      defaultPersonIds,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await tx.store('programs').put(program);
+    return program;
+  });
+}
+
+export function deleteProgram(id: string): Promise<void> {
+  return withTx(['programs', 'episodeLogs'], 'readwrite', async (tx) => {
+    const program = await tx.store('programs').get(id);
+    if (!program) return;
+    const count = await tx.store('episodeLogs').countByIndex(IDX.logsByProgram, id);
+    if (count > 0) throw new ProgramInUseError(program.name, count);
+    await tx.store('programs').delete(id);
+  });
+}
+
+// ---------------------------------------------------------------- 人物
+
+export function savePerson(input: PersonInput): Promise<Person> {
+  const name = cleanName(input.name);
+  if (!name) return Promise.reject(new AppError('名前を入力してください。'));
+  const aliases = cleanAliases(input.aliases, name);
+
+  return withTx(['persons'], 'readwrite', async (tx) => {
+    const now = nowIso();
+    const existing = input.id ? await tx.store('persons').get(input.id) : undefined;
+    if (input.id && !existing) throw new AppError('人物が見つかりません（削除された可能性があります）。');
+    const person: Person = {
+      id: existing?.id ?? newId(),
+      name,
+      aliases,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await tx.store('persons').put(person);
+    return person;
+  });
+}
+
+/** 参照状況を調べ、参照があれば PersonInUseError。なければ同一トランザクションで削除。 */
+export function deletePerson(id: string): Promise<void> {
+  return withTx(['persons', 'programs', 'episodeLogs', 'episodeAppearances'], 'readwrite', async (tx) => {
+    const person = await tx.store('persons').get(id);
+    if (!person) return;
+
+    const programs = await tx.store('programs').getAll();
+    const programName = new Map(programs.map((p) => [p.id, p.name]));
+    const defaultOfPrograms = programs.filter((p) => p.defaultPersonIds.includes(id)).map((p) => p.name);
+
+    const apps = await tx.store('episodeAppearances').getAllByIndex(IDX.appearancesByPerson, id);
+    const logIds = Array.from(new Set(apps.map((a) => a.episodeLogId)));
+    const perProgram = new Map<string, number>();
+    for (const logId of logIds) {
+      const log = await tx.store('episodeLogs').get(logId);
+      const pname = log ? (programName.get(log.programId) ?? '（不明な番組）') : '（不明なログ）';
+      perProgram.set(pname, (perProgram.get(pname) ?? 0) + 1);
+    }
+
+    if (defaultOfPrograms.length > 0 || logIds.length > 0) {
+      throw new PersonInUseError(person.name, {
+        defaultOfPrograms,
+        logCount: logIds.length,
+        logsByProgram: Array.from(perProgram, ([name, count]) => ({ programName: name, count })).sort(
+          (a, b) => b.count - a.count,
+        ),
+      });
+    }
+    await tx.store('persons').delete(id);
+  });
+}
+
+// ---------------------------------------------------------------- 聴取ログ
+
+/** episodeLogs と episodeAppearances を1トランザクションで保存 */
+export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
+  if (!input.programId) return Promise.reject(new AppError('番組を選択してください。'));
+  if (!isValidYmd(input.broadcastDate)) return Promise.reject(new AppError('放送日を正しく入力してください。'));
+
+  // 同一人物の重複は先勝ちで除外
+  const seen = new Set<string>();
+  const appearances = input.appearances.filter((a) => {
+    if (seen.has(a.personId)) return false;
+    seen.add(a.personId);
+    return true;
+  });
+
+  return withTx(['episodeLogs', 'episodeAppearances', 'programs', 'persons'], 'readwrite', async (tx) => {
+    if (!(await tx.store('programs').get(input.programId))) throw new AppError('選択した番組が見つかりません。');
+    for (const a of appearances) {
+      if (!(await tx.store('persons').get(a.personId))) throw new AppError('存在しない人物が含まれています。');
+    }
+
+    const now = nowIso();
+    const existing = input.id ? await tx.store('episodeLogs').get(input.id) : undefined;
+    if (input.id && !existing) throw new AppError('リピート回が見つかりません（削除された可能性があります）。');
+
+    const log: EpisodeLog = {
+      id: existing?.id ?? newId(),
+      programId: input.programId,
+      broadcastDate: input.broadcastDate,
+      memo: input.memo.replace(/\s+$/, ''),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await tx.store('episodeLogs').put(log);
+
+    const appStore = tx.store('episodeAppearances');
+    const old = await appStore.getAllByIndex(IDX.appearancesByLog, log.id);
+    for (const o of old) await appStore.delete(o.id);
+    let order = 0;
+    for (const a of appearances) {
+      const rec: EpisodeAppearance = {
+        id: newId(),
+        episodeLogId: log.id,
+        personId: a.personId,
+        role: a.role,
+        sortOrder: order++,
+      };
+      await appStore.add(rec);
+    }
+    return log;
+  });
+}
+
+/** ログ削除：episodeLogs と紐づく episodeAppearances を同一トランザクションで削除 */
+export function deleteEpisodeLog(id: string): Promise<void> {
+  return withTx(['episodeLogs', 'episodeAppearances'], 'readwrite', async (tx) => {
+    const appStore = tx.store('episodeAppearances');
+    const apps = await appStore.getAllByIndex(IDX.appearancesByLog, id);
+    for (const a of apps) await appStore.delete(a.id);
+    await tx.store('episodeLogs').delete(id);
+  });
+}
+
+// ---------------------------------------------------------------- 一括置き換え（インポート）
+
+/** 全ストアを消去して data で置き換える。1トランザクションのため途中失敗時は元データが残る。 */
+export function replaceAllData(data: DataSnapshot): Promise<void> {
+  return withTx(STORE_NAMES, 'readwrite', async (tx) => {
+    for (const name of STORE_NAMES) await tx.store(name).clear();
+    for (const r of data.programs) await tx.store('programs').add(r);
+    for (const r of data.persons) await tx.store('persons').add(r);
+    for (const r of data.episodeLogs) await tx.store('episodeLogs').add(r);
+    for (const r of data.episodeAppearances) await tx.store('episodeAppearances').add(r);
+  });
+}

@@ -8,3 +8,5 @@ dev-dist/
 npm-debug.log*
 # 個人データのバックアップを誤ってコミットしないため
 radio-log-backup-*.json
+# 生成物（scripts/generate-icons.mjs で作成）
+public/icons/*.png

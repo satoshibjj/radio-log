@@ -5,8 +5,11 @@
   "description": "Radio Log - ラジオ聴取ログ管理 PWA（IndexedDBローカル保存）",
   "type": "module",
   "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "predev": "npm run icons",
     "dev": "vite",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prebuild": "npm run icons",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview"
   },
@@ -19,6 +22,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "sharp": "^0.34.0",
     "typescript": "~5.9.2",
     "vite": "^7.1.0",
     "vite-plugin-pwa": "^1.0.3",

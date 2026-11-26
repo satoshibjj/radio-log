@@ -4,6 +4,7 @@ import { useUi } from './UiProvider';
 import { savePerson } from '../db/repo';
 import type { Person } from '../db/types';
 import { cleanName, errorMessage, normalizeForSearch } from '../lib/util';
+import { searchWikipediaPersons, type WikiPersonCandidate } from '../lib/external';
 
 interface Props {
   /** 既に選択済み（候補から除外） */
@@ -28,6 +29,8 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
   const { toast } = useUi();
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
+  /** Wikipedia 候補（検索した語ごと） */
+  const [wiki, setWiki] = useState<{ query: string; loading: boolean; results: WikiPersonCandidate[]; error: string } | null>(null);
   const inputId = useId();
 
   const nq = normalizeForSearch(q);
@@ -64,18 +67,47 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
   const pick = (id: string) => {
     onPick(id);
     setQ('');
+    setWiki(null);
   };
 
-  const create = async () => {
-    const name = cleanName(q);
+  const searchWiki = async () => {
+    const query = cleanName(q);
+    if (!query) return;
+    setWiki({ query, loading: true, results: [], error: '' });
+    try {
+      const results = await searchWikipediaPersons(query);
+      setWiki((w) => (w?.query === query ? { query, loading: false, results, error: '' } : w));
+    } catch (err) {
+      setWiki((w) => (w?.query === query ? { query, loading: false, results: [], error: errorMessage(err) } : w));
+    }
+  };
+  const wikiShown = wiki && wiki.query === cleanName(q) ? wiki : null;
+
+  /** 同名（名前・別名）の既存人物 */
+  const findExisting = (name: string) => {
+    const n = normalizeForSearch(name);
+    return data.persons.find((p) => normalizeForSearch(p.name) === n || p.aliases.some((a) => normalizeForSearch(a) === n));
+  };
+
+  const create = async (rawName: string = q) => {
+    const name = cleanName(rawName);
     if (!name || busy) return;
+    const existing = findExisting(name);
+    if (existing) {
+      if (exclude.has(existing.id)) toast(`「${existing.name}」は選択済みです`);
+      else onPick(existing.id);
+      setQ('');
+      setWiki(null);
+      return;
+    }
     setBusy(true);
     try {
       const p = await savePerson({ name, aliases: [] });
       await reload();
       onPick(p.id);
       // 保存中に入力が変わっていたら消さない
-      setQ((cur) => (cleanName(cur) === name ? '' : cur));
+      setQ((cur) => (cleanName(cur) === cleanName(q) ? '' : cur));
+      setWiki(null);
       toast(`「${p.name}」を人物に追加しました`);
     } catch (err) {
       toast(errorMessage(err));
@@ -126,6 +158,41 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
               <button type="button" className="suggest-item suggest-create" onClick={() => void create()} disabled={busy}>
                 ＋「{cleanName(q)}」を新しい人物として追加
               </button>
+            </li>
+          )}
+          {allowCreate && !wikiShown && (
+            <li>
+              <button type="button" className="suggest-item suggest-wiki" onClick={() => void searchWiki()}>
+                📖 Wikipediaで「{cleanName(q)}」の候補を検索
+              </button>
+            </li>
+          )}
+          {wikiShown && (
+            <li className="wiki-block">
+              <div className="wiki-head">Wikipediaの候補（タップで追加）</div>
+              {wikiShown.loading && <div className="suggest-empty">検索中…</div>}
+              {wikiShown.error && <div className="suggest-empty field-error">{wikiShown.error}</div>}
+              {!wikiShown.loading && !wikiShown.error && wikiShown.results.length === 0 && (
+                <div className="suggest-empty">候補が見つかりませんでした</div>
+              )}
+              {wikiShown.results.map((c) => (
+                <button
+                  key={c.title}
+                  type="button"
+                  className="suggest-item"
+                  disabled={busy}
+                  onClick={() => void create(c.name)}
+                >
+                  <span>
+                    {c.name}
+                    {findExisting(c.name) && <span className="badge-registered">登録済み</span>}
+                  </span>
+                  {(c.qualifier || c.description) && (
+                    <span className="suggest-via">{[c.qualifier, c.description].filter(Boolean).join('／')}</span>
+                  )}
+                </button>
+              ))}
+              <div className="wiki-foot">検索語のみ Wikipedia に送信されます・出典: Wikipedia</div>
             </li>
           )}
           {!allowCreate && matches.length === 0 && !exact && <li className="suggest-empty">該当する人物がいません</li>}

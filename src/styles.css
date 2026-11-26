@@ -1110,3 +1110,115 @@ a.card:active {
     transition: none !important;
   }
 }
+
+/* ------------------------------------------------- 入力補助（外部検索・放送局チップ） */
+.btn-assist {
+  align-self: flex-start;
+  border-style: dashed;
+  border-color: var(--brass);
+  color: #6b4e05;
+  background: #fbf3dc;
+}
+
+.assist-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px dashed var(--brass);
+  border-radius: var(--radius-sm);
+  background: #fbf6e8;
+}
+
+.assist-panel .muted,
+.assist-panel .field-error {
+  margin: 0;
+}
+
+.assist-row {
+  display: flex;
+  gap: 8px;
+}
+
+.assist-footer .btn,
+.assist-row .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.assist-item {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.assist-item img {
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--paper-2);
+}
+
+.assist-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.assist-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.assist-footer .muted {
+  font-size: 11px;
+}
+
+.station-chips {
+  margin-top: 2px;
+}
+
+.station-chips .chip {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.suggest-wiki {
+  color: #6b4e05;
+  font-weight: 700;
+  border-top: 1px dashed var(--line);
+  border-radius: 0 0 8px 8px;
+}
+
+.wiki-block {
+  border-top: 1px dashed var(--line);
+  padding-top: 4px;
+}
+
+.wiki-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 6px 12px 2px;
+}
+
+.wiki-foot {
+  font-size: 11px;
+  color: var(--ink-mute);
+  padding: 4px 12px 6px;
+}
+
+.badge-registered {
+  font-size: 10px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  vertical-align: 2px;
+}

@@ -163,6 +163,9 @@ export function DataPage() {
         <p className="muted">
           データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除で消えるため、定期的なエクスポートをおすすめします。
         </p>
+        <p className="muted">
+          番組登録・人物追加の「検索」ボタンを押したときだけ、入力した検索語が Apple（iTunes Search API）または Wikipedia に送信されます。記録したデータが送られることはありません。
+        </p>
         <p>
           ストレージ永続化：
           <strong>

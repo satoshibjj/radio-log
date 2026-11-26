@@ -2,17 +2,20 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
+import { PodcastSearch } from '../components/PodcastSearch';
+import { StationChips } from '../components/StationChips';
 import { useUi } from '../components/UiProvider';
 import { deleteProgram, ProgramInUseError, saveProgram } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage } from '../lib/util';
+import { matchStation } from '../lib/stations';
 
 /** S4：番組新規登録／編集 */
 export function ProgramFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const { loading, programById, reload } = useData();
+  const { data, loading, programById, reload } = useData();
   const { confirm, alert, toast } = useUi();
   const existing = id ? programById.get(id) : undefined;
 
@@ -104,6 +107,16 @@ export function ProgramFormPage() {
             aria-invalid={Boolean(nameError)}
           />
           {nameError && <p className="field-error">{nameError}</p>}
+          <PodcastSearch
+            initialTerm={name}
+            onSelect={(r) => {
+              setName(r.name);
+              setNameError('');
+              const matched = station.trim() ? undefined : matchStation(r.artist, data.programs.map((p) => p.station));
+              if (matched) setStation(matched);
+              toast(matched ? `番組名と放送局（${matched}）を入力しました` : '番組名を入力しました');
+            }}
+          />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="pstation">
@@ -114,9 +127,10 @@ export function ProgramFormPage() {
             className="input"
             value={station}
             onChange={(e) => setStation(e.target.value)}
-            placeholder="例：サンプル放送"
+            placeholder="下から選ぶか、手入力"
             autoComplete="off"
           />
+          <StationChips value={station} onChange={setStation} />
         </div>
         <div className="field">
           <span className="field-label">基本パーソナリティ</span>

@@ -32,7 +32,7 @@ test('スクリーンショット（主要画面）', async ({ page, context }) 
   await mockExternal(context);
   const shot = async (name: string) => {
     await page.waitForTimeout(300);
-    await page.screenshot({ path: `screenshots/${name}.png`, fullPage: true });
+    await page.screenshot({ path: `screenshots/${name}.jpg`, fullPage: true, type: 'jpeg', quality: 55 });
   };
   await open(page, '/');
   await shot('00-home-empty');

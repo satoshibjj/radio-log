@@ -55,3 +55,14 @@ jobs:
           path: screenshots/
           retention-days: 7
           if-no-files-found: ignore
+
+      # 見た目の確認用：スクリーンショットをログにも出す（Artifacts を開けない環境向け）
+      - name: Print screenshots (base64)
+        if: always()
+        run: |
+          for f in screenshots/*.jpg; do
+            [ -f "$f" ] || continue
+            echo "===SHOT $(basename "$f")"
+            base64 -w 4000 "$f"
+            echo "===END"
+          done

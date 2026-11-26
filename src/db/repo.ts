@@ -12,7 +12,7 @@ import type {
   Program,
   ProgramInput,
 } from './types';
-import { cleanAliases, cleanName, isValidLogDate, newId, nowIso } from '../lib/util';
+import { cleanAliases, cleanName, isValidLogDate, newId, normalizeForSearch, nowIso } from '../lib/util';
 import { cleanLinks, LinkValidationError } from '../lib/links';
 
 /** ユーザーに見せる前提のエラー */
@@ -248,5 +248,99 @@ export function replaceAllData(data: DataSnapshot): Promise<void> {
     for (const r of data.persons) await tx.store('persons').add(r);
     for (const r of data.episodeLogs) await tx.store('episodeLogs').add(r);
     for (const r of data.episodeAppearances) await tx.store('episodeAppearances').add(r);
+  });
+}
+
+// ---------------------------------------------------------------- シェアされたリストの取り込み（★3）
+
+/** 取り込む1回分（受け取ったリストを検証済みのもの） */
+export interface SharedEpisodeInput {
+  programName: string;
+  station: string;
+  broadcastDate: string;
+  cast: { name: string; role: 'regular' | 'guest' }[];
+  links: EpisodeLog['links'];
+  memo: string;
+}
+
+export interface SharedImportResult {
+  logIds: string[];
+  /** 新しく作った番組・人物の名前 */
+  newPrograms: string[];
+  newPersons: string[];
+}
+
+const sameName = (a: string, b: string) => {
+  const x = normalizeForSearch(a);
+  return x !== '' && x === normalizeForSearch(b);
+};
+
+/**
+ * シェアされた回を自分のリピート帳に入れる（全件を1トランザクションで。途中で失敗したら何も入らない）。
+ * 番組は名前で、出演者は名前・別名で照合し、あれば再利用、なければ新しく作る。
+ * 同じ番組・同じ放送日の確認は呼び出し側（画面）で行う。
+ */
+export async function importSharedEpisodes(inputs: SharedEpisodeInput[]): Promise<SharedImportResult> {
+  // 先に検証（トランザクションの外で）
+  const prepared = inputs.map((it) => {
+    const programName = cleanName(it.programName);
+    if (!programName) throw new AppError('番組名が空の回があります。');
+    if (!isValidLogDate(it.broadcastDate)) throw new AppError('放送日が正しくない回があります。');
+    let links: EpisodeLog['links'];
+    try {
+      links = cleanLinks(it.links);
+    } catch (err) {
+      throw new AppError(err instanceof LinkValidationError ? err.message : 'リンクが正しくありません。');
+    }
+    return { ...it, programName, station: cleanName(it.station), links };
+  });
+
+  return withTx(['programs', 'persons', 'episodeLogs', 'episodeAppearances'], 'readwrite', async (tx) => {
+    const programs = await tx.store('programs').getAll();
+    const persons = await tx.store('persons').getAll();
+    const result: SharedImportResult = { logIds: [], newPrograms: [], newPersons: [] };
+    const now = nowIso();
+
+    for (const it of prepared) {
+      let program = programs.find((p) => sameName(p.name, it.programName));
+      if (!program) {
+        program = { id: newId(), name: it.programName, station: it.station, defaultPersonIds: [], createdAt: now, updatedAt: now };
+        await tx.store('programs').add(program);
+        programs.push(program);
+        result.newPrograms.push(program.name);
+      }
+
+      const personIds: { personId: string; role: 'regular' | 'guest' }[] = [];
+      for (const c of it.cast) {
+        const name = cleanName(c.name);
+        if (!name) continue;
+        let person =
+          persons.find((p) => sameName(p.name, name)) ?? persons.find((p) => p.aliases.some((a) => sameName(a, name)));
+        if (!person) {
+          person = { id: newId(), name, aliases: [], createdAt: now, updatedAt: now };
+          await tx.store('persons').add(person);
+          persons.push(person);
+          result.newPersons.push(person.name);
+        }
+        if (!personIds.some((x) => x.personId === person.id)) personIds.push({ personId: person.id, role: c.role });
+      }
+
+      const log: EpisodeLog = {
+        id: newId(),
+        programId: program.id,
+        broadcastDate: it.broadcastDate,
+        memo: it.memo.replace(/\s+$/, ''),
+        links: it.links,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await tx.store('episodeLogs').add(log);
+      let order = 0;
+      for (const a of personIds) {
+        await tx.store('episodeAppearances').add({ id: newId(), episodeLogId: log.id, personId: a.personId, role: a.role, sortOrder: order++ });
+      }
+      result.logIds.push(log.id);
+    }
+    return result;
   });
 }

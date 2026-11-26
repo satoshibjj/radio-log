@@ -43,7 +43,7 @@ export function GuideContent() {
         <dt>ホーム</dt>
         <dd>この画面。使い方・最近の回・バックアップ</dd>
         <dt>リピート帳</dt>
-        <dd>追加した「また聴きたい回」の一覧（絞り込み・並び替え・おまかせ）</dd>
+        <dd>追加した「また聴きたい回」の一覧（絞り込み・並び替え・おまかせ・選んでシェア）</dd>
         <dt>＋ 回を追加</dt>
         <dd>また聴きたい回を1件追加</dd>
         <dt>番組</dt>
@@ -85,6 +85,18 @@ export function GuideContent() {
         <details className="card">
           <summary>radiko のリンクが開けなくなった</summary>
           <p>radiko のタイムフリーは放送後おおむね1週間で聴けなくなります。聴けなくなっても記録はそのまま残ります。Podcast や YouTube で配信されていれば、そのリンクを追加しておくと便利です。</p>
+        </details>
+        <details className="card">
+          <summary>おすすめの回を友だちに送るには？</summary>
+          <p>
+            <strong>「リピート帳」</strong>→「📨 選んでシェア」で回をタップして選び（10件まで）、「次へ（確認）」で相手に見える内容を確認してから、LINE・X などに送ります。メモを含めるかは選べます。リンクを知っている人は誰でも中身を見られるので、メモに個人的なことが書かれていないか確認してください。
+          </p>
+        </details>
+        <details className="card">
+          <summary>送られてきたリストはどうなる？</summary>
+          <p>
+            リンクを開くと「シェアされたリスト」として別の画面に出ます。開いただけでは自分のリピート帳には入りません。気に入った回だけ「＋ 自分のリピート帳に入れる」を押してください。番組や出演者は、登録済みの名前（別名も）と同じならそれを使い、なければ新しく登録します。
+          </p>
         </details>
         <details className="card">
           <summary>データはどこに保存される？</summary>

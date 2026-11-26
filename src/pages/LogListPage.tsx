@@ -6,6 +6,9 @@ import { PersonPicker } from '../components/PersonPicker';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useUi } from '../components/UiProvider';
 import { ShareImageModal } from '../components/ShareImageModal';
+import { ShareListModal } from '../components/ShareListModal';
+import { SHARE_MAX_ITEMS, type SharedItem } from '../lib/sharedList';
+import { linksOf } from '../lib/links';
 import { createTopImage } from '../lib/shareImage';
 import { useData } from '../state/DataContext';
 import { compareLogsAdded, compareLogsByDate, NO_DATE_LABEL, todayLocal } from '../lib/util';
@@ -40,6 +43,10 @@ export function LogListPage() {
   /** 直前に選ばれた回（連続で同じ回を出さないため） */
   const lastPickedId = useRef<string | null>(null);
   const [sharingTop, setSharingTop] = useState(false);
+  /** リスト共有の選択モード（選んだ回の id。選んだ順） */
+  const [selecting, setSelecting] = useState(false);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [sharingList, setSharingList] = useState(false);
 
   // URL の ?person=ID&person=ID で出演者フィルタを保持（S6 のチップから遷移可能）
   const selected = useMemo(
@@ -134,6 +141,37 @@ export function LogListPage() {
       }),
     });
 
+  const togglePick = (id: string) => {
+    if (chosen.includes(id)) setChosen(chosen.filter((x) => x !== id));
+    else if (chosen.length >= SHARE_MAX_ITEMS) toast(`シェアできるのは${SHARE_MAX_ITEMS}件までです`);
+    else setChosen([...chosen, id]);
+  };
+  const exitSelecting = () => {
+    setSelecting(false);
+    setChosen([]);
+    setSharingList(false);
+  };
+
+  /** 選んだ回を、画面の並び順でシェア用の形にする */
+  const shareItems = useMemo<SharedItem[]>(() => {
+    if (!sharingList) return [];
+    const order = groups.flatMap((g) => g.logs).filter((l) => chosen.includes(l.id));
+    return order.map((l) => {
+      const p = programById.get(l.programId);
+      return {
+        programName: p?.name ?? '（不明な番組）',
+        station: p?.station ?? '',
+        broadcastDate: l.broadcastDate,
+        cast: (appearancesByLog.get(l.id) ?? []).flatMap((a) => {
+          const name = personById.get(a.personId)?.name;
+          return name ? [{ name, role: a.role }] : [];
+        }),
+        links: linksOf(l),
+        memo: l.memo,
+      };
+    });
+  }, [sharingList, groups, chosen, programById, appearancesByLog, personById]);
+
   const filtered = selected.length > 0;
   /** まだ1件も無い（はじめての状態） */
   const isEmpty = !loading && data.episodeLogs.length === 0;
@@ -225,14 +263,20 @@ export function LogListPage() {
               </button>
             ))}
           </div>
-            <button
-              type="button"
-              className="btn btn-small top-share-btn"
-              onClick={() => setSharingTop(true)}
-            >
-              📷 上位{top5.length}件をシェア
-            </button>
+            {!selecting && (
+              <div className="share-btns">
+                <button type="button" className="btn btn-small top-share-btn" onClick={() => setSharingTop(true)}>
+                  📷 上位{top5.length}件をシェア
+                </button>
+                <button type="button" className="btn btn-small select-share-btn" onClick={() => setSelecting(true)}>
+                  📨 選んでシェア
+                </button>
+              </div>
+            )}
           </div>
+          {selecting && (
+            <p className="select-hint">シェアする回をタップして選んでください（{SHARE_MAX_ITEMS}件まで）。</p>
+          )}
           {groups.map((g) => (
             <section key={g.key} className="log-group">
               {g.title && (
@@ -244,7 +288,14 @@ export function LogListPage() {
               )}
               <div className="card-list">
                 {g.logs.map((l) => (
-                  <LogCard key={l.id} log={l} hideProgram={sort === 'program'} />
+                  <LogCard
+                    key={l.id}
+                    log={l}
+                    hideProgram={sort === 'program'}
+                    selectable={selecting}
+                    selected={chosen.includes(l.id)}
+                    onToggle={() => togglePick(l.id)}
+                  />
                 ))}
               </div>
             </section>
@@ -254,8 +305,25 @@ export function LogListPage() {
 
       <div className="fab-spacer" aria-hidden="true" />
 
+      {/* リスト共有の選択中は、下に操作バー */}
+      {selecting && (
+        <div className="select-bar" role="region" aria-label="シェアする回の選択">
+          <span className="select-count">
+            {chosen.length} / {SHARE_MAX_ITEMS} 件
+          </span>
+          <button type="button" className="btn btn-small" onClick={exitSelecting}>
+            やめる
+          </button>
+          <button type="button" className="btn btn-primary" disabled={chosen.length === 0} onClick={() => setSharingList(true)}>
+            次へ（確認）
+          </button>
+        </div>
+      )}
+
+      {sharingList && shareItems.length > 0 && <ShareListModal items={shareItems} onClose={() => setSharingList(false)} />}
+
       {/* 片手で押しやすい右下の「おまかせ1本」 */}
-      {!isEmpty && (
+      {!isEmpty && !selecting && (
       <div className="random-fab-wrap">
         <button
           type="button"

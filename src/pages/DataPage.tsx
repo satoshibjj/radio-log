@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
 import { BackupValidationError, validateBackup } from '../db/backup';
@@ -186,12 +187,22 @@ export function DataPage() {
       </section>
 
       <section className="card section-card">
+        <h2 className="section-title small">シェアされたリスト</h2>
+        <p className="muted">
+          友だちから「ファイルで送る」で受け取ったリスト（.json / .txt）はここから開けます。リンクで受け取った場合は、そのリンクを開くだけです。開いただけではリピート帳に入りません。
+        </p>
+        <Link to="/shared" className="btn btn-block">
+          📂 受け取ったリストを開く
+        </Link>
+      </section>
+
+      <section className="card section-card">
         <h2 className="section-title small">保存について</h2>
         <p className="muted">
           データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除や機種変更で消えるため、ときどきバックアップしてください（14日たつとホームでお知らせします）。ホーム画面に追加して使うと、Safari の履歴削除の影響を受けにくくなります。
         </p>
         <p className="muted">
-          番組登録で番組名を入力したとき（候補表示のため）と、出演者の「Wikipediaで候補を検索」を押したときだけ、検索語が Apple（Apple Podcasts の検索）または Wikipedia に送信されます。記録したデータが送られることはありません。
+          番組登録で番組名を入力したとき（候補表示のため）と、出演者の「Wikipediaで候補を検索」を押したときだけ、検索語が Apple（Apple Podcasts の検索）または Wikipedia に送信されます。「YouTube から題名を取得」を押したときは、貼った URL だけが YouTube に送信されます。記録したデータが送られることはありません（リスト共有のリンクは、あなたが選んだ回の内容をリンク自体に入れて送ります。サーバーには保存されません）。
         </p>
         <p>
           ストレージ永続化：

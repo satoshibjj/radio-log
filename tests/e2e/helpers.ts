@@ -143,15 +143,17 @@ export async function mockExternal(
 /** Web Share API を有効化したことにしてモック（共有されたファイルを window.__shared に記録）。txtOnly は Android Chrome（.json 不可）の再現 */
 export async function mockShare(page: Page, opts: { txtOnly?: boolean } = {}): Promise<void> {
   await page.addInitScript((allowTxtOnly: boolean) => {
-    const w = window as unknown as { __shared?: { name: string; type: string; text?: string }[] };
+    const w = window as unknown as { __shared?: { name: string; type: string; text?: string }[]; __sharedUrls?: string[] };
     w.__shared = [];
+    w.__sharedUrls = [];
     Object.defineProperty(navigator, 'canShare', {
       configurable: true,
       value: (d: { files?: File[] }) => !allowTxtOnly || (d.files ?? []).every((f) => f.name.endsWith('.txt')),
     });
     Object.defineProperty(navigator, 'share', {
       configurable: true,
-      value: async (d: { files?: File[] }) => {
+      value: async (d: { files?: File[]; url?: string }) => {
+        if (d.url) w.__sharedUrls!.push(d.url);
         for (const f of d.files ?? []) {
           const isText = f.type.startsWith('text/') || f.type.includes('json');
           w.__shared!.push({ name: f.name, type: f.type, text: isText ? await f.text() : undefined });
@@ -253,4 +255,9 @@ export function idbVersion(page: Page): Promise<number> {
         };
       }),
   );
+}
+
+/** 共有シートで送られた URL（リスト共有のリンク） */
+export function sharedUrls(page: Page): Promise<string[]> {
+  return page.evaluate(() => (window as unknown as { __sharedUrls: string[] }).__sharedUrls);
 }

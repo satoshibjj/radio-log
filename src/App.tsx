@@ -12,6 +12,7 @@ import { LogDetailPage } from './pages/LogDetailPage';
 import { PersonsPage } from './pages/PersonsPage';
 import { DataPage } from './pages/DataPage';
 import { HomePage } from './pages/HomePage';
+import { SharedListPage } from './pages/SharedListPage';
 
 /** 画面遷移時に先頭へスクロール */
 function ScrollToTop() {
@@ -52,6 +53,8 @@ function AppRoutes() {
       <Route path="/logs/:id/edit" element={<LogFormPage />} />
       <Route path="/persons" element={<PersonsPage />} />
       <Route path="/data" element={<DataPage />} />
+      <Route path="/shared" element={<SharedListPage />} />
+      <Route path="/shared/:token" element={<SharedListPage />} />
       <Route path="/guide" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

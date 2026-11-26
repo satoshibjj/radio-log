@@ -8,17 +8,21 @@ interface Props {
   log: EpisodeLog;
   /** 番組名を表示しない（番組詳細内など） */
   hideProgram?: boolean;
+  /** 選択モード（リスト共有）：タップで選択を切り替える */
+  selectable?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
 }
 
-export function LogCard({ log, hideProgram }: Props) {
+export function LogCard({ log, hideProgram, selectable, selected, onToggle }: Props) {
   const { programById, personById, appearancesByLog } = useData();
   const program = programById.get(log.programId);
   const apps = appearancesByLog.get(log.id) ?? [];
   // リンク先のサービス名（重複は1つに）。カード全体がリンクなので、ここは表示だけ
   const services = Array.from(new Set(linksOf(log).map((l) => detectService(l.url).name)));
 
-  return (
-    <Link to={`/logs/${log.id}`} className="card log-card">
+  const body = (
+    <>
       <div className="log-card-top">
         {log.broadcastDate ? (
           <time className="date-badge" dateTime={log.broadcastDate}>
@@ -45,6 +49,22 @@ export function LogCard({ log, hideProgram }: Props) {
         </div>
       )}
       {log.memo && <p className="log-card-memo">{log.memo}</p>}
+    </>
+  );
+
+  if (selectable) {
+    return (
+      <button type="button" className={`card log-card is-selectable ${selected ? 'is-checked' : ''}`} aria-pressed={Boolean(selected)} onClick={onToggle}>
+        <span className="select-mark" aria-hidden="true">
+          {selected ? '✓' : ''}
+        </span>
+        {body}
+      </button>
+    );
+  }
+  return (
+    <Link to={`/logs/${log.id}`} className="card log-card">
+      {body}
     </Link>
   );
 }

@@ -5,6 +5,7 @@ import { savePerson } from '../db/repo';
 import type { Person } from '../db/types';
 import { cleanName, errorMessage, normalizeForSearch } from '../lib/util';
 import { searchWikipediaPersons, type WikiPersonCandidate } from '../lib/external';
+import { appearanceCounts } from '../lib/suggest';
 
 interface Props {
   /** 既に選択済み（候補から除外） */
@@ -34,6 +35,7 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
   const inputId = useId();
 
   const nq = normalizeForSearch(q);
+  const counts = useMemo(() => appearanceCounts(data.episodeAppearances), [data.episodeAppearances]);
   const exclude = useMemo(() => new Set(excludeIds), [excludeIds]);
 
   const matches = useMemo<Match[]>(() => {
@@ -50,8 +52,15 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
         if (alias) out.push({ person: p, via: alias, score: normalizeForSearch(alias) === nq ? 0.5 : 3 });
       }
     }
-    return out.sort((a, b) => a.score - b.score || a.person.name.localeCompare(b.person.name, 'ja')).slice(0, 8);
-  }, [data.persons, exclude, nq]);
+    return out
+      .sort(
+        (a, b) =>
+          a.score - b.score ||
+          (counts.get(b.person.id) ?? 0) - (counts.get(a.person.id) ?? 0) ||
+          a.person.name.localeCompare(b.person.name, 'ja'),
+      )
+      .slice(0, 8);
+  }, [data.persons, exclude, nq, counts]);
 
   /** 完全一致する人物（除外済みも含む）があれば新規作成ボタンは出さない */
   const exact = useMemo(

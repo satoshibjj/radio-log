@@ -5,9 +5,10 @@ import { PersonListEditor, type PersonItem } from '../components/PersonListEdito
 import { useUi } from '../components/UiProvider';
 import { findSameDayLogs, saveEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
-import { errorMessage, formatYmd, isValidYmd, todayLocal } from '../lib/util';
+import { compareLogsDesc, errorMessage, formatYmd, isValidYmd, todayLocal } from '../lib/util';
+import { rankFrequentPersons } from '../lib/suggest';
 
-const RECENT_LIMIT = 5;
+const RECENT_LIMIT = 8;
 
 /** S5：聴取ログ作成／編集 */
 export function LogFormPage() {
@@ -15,7 +16,7 @@ export function LogFormPage() {
   const isEdit = Boolean(id);
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { data, loading, programById, appearancesByLog, reload } = useData();
+  const { data, loading, programById, personById, appearancesByLog, reload } = useData();
   const { confirm, alert, toast } = useUi();
 
   const original = useMemo(() => (id ? data.episodeLogs.find((l) => l.id === id) : undefined), [data.episodeLogs, id]);
@@ -65,6 +66,38 @@ export function LogFormPage() {
     }
     return out;
   }, [data.episodeLogs, programById]);
+
+  /** 同じ番組の直近ログ（編集中のログは除く） */
+  const previousLog = useMemo(() => {
+    if (!programId) return undefined;
+    return data.episodeLogs.filter((l) => l.programId === programId && l.id !== id).sort(compareLogsDesc)[0];
+  }, [data.episodeLogs, programId, id]);
+  const previousItems = useMemo<PersonItem[]>(
+    () =>
+      previousLog
+        ? (appearancesByLog.get(previousLog.id) ?? [])
+            .filter((a) => personById.has(a.personId))
+            .map((a) => ({ personId: a.personId, role: a.role }))
+        : [],
+    [previousLog, appearancesByLog, personById],
+  );
+  const sameAsPrevious =
+    previousItems.length === items.length &&
+    previousItems.every((p, i) => p.personId === items[i].personId && p.role === items[i].role);
+
+  /** よく出る人（この番組・選択中の人との共演・全体の出演回数から） */
+  const frequentIds = useMemo(
+    () =>
+      rankFrequentPersons({
+        logs: data.episodeLogs.filter((l) => l.id !== id),
+        appearancesByLog,
+        programId: programId || undefined,
+        selectedIds: items.map((x) => x.personId),
+        isValidPerson: (pid) => personById.has(pid),
+        limit: 6,
+      }),
+    [data.episodeLogs, appearancesByLog, programId, items, personById, id],
+  );
 
   const sortedPrograms = useMemo(
     () => [...data.programs].sort((a, b) => a.name.localeCompare(b.name, 'ja')),
@@ -243,10 +276,23 @@ export function LogFormPage() {
         <div className="field">
           <span className="field-label">出演者</span>
           <p className="field-hint">役割ボタンでレギュラー／ゲストを切り替え。▲▼で並び替え。</p>
+          {previousLog && previousItems.length > 0 && !sameAsPrevious && (
+            <button
+              type="button"
+              className="btn btn-small btn-assist"
+              onClick={() => {
+                personsTouched.current = true;
+                setItems(previousItems);
+              }}
+            >
+              ↺ 前回（{formatYmd(previousLog.broadcastDate)}）と同じ出演者にする
+            </button>
+          )}
           <PersonListEditor
             items={items}
             showRole
             addRole="guest"
+            suggestedIds={frequentIds}
             onChange={(next) => {
               personsTouched.current = true;
               setItems(next);

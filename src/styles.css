@@ -1222,3 +1222,24 @@ a.card:active {
   color: var(--ink-soft);
   vertical-align: 2px;
 }
+
+/* よく出る人 */
+.frequent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.frequent-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-mute);
+}
+
+.chip-add {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-style: dashed;
+  font-weight: 700;
+}

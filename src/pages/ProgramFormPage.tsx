@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
@@ -9,13 +9,14 @@ import { deleteProgram, ProgramInUseError, saveProgram } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage } from '../lib/util';
 import { matchStation } from '../lib/stations';
+import { rankFrequentPersons } from '../lib/suggest';
 
 /** S4：番組新規登録／編集 */
 export function ProgramFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const { data, loading, programById, reload } = useData();
+  const { data, loading, programById, personById, appearancesByLog, reload } = useData();
   const { confirm, alert, toast } = useUi();
   const existing = id ? programById.get(id) : undefined;
 
@@ -25,6 +26,19 @@ export function ProgramFormPage() {
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
   const initialized = useRef(false);
+
+  const frequentIds = useMemo(
+    () =>
+      rankFrequentPersons({
+        logs: data.episodeLogs,
+        appearancesByLog,
+        programId: id,
+        selectedIds: persons.map((x) => x.personId),
+        isValidPerson: (pid) => personById.has(pid),
+        limit: 6,
+      }),
+    [data.episodeLogs, appearancesByLog, id, persons, personById],
+  );
 
   // 編集時：読み込み完了後に一度だけ初期値を反映
   useEffect(() => {
@@ -135,7 +149,7 @@ export function ProgramFormPage() {
         <div className="field">
           <span className="field-label">基本パーソナリティ</span>
           <p className="field-hint">リピート回の記録時に出演者として自動でセットされます。</p>
-          <PersonListEditor items={persons} onChange={setPersons} addRole="regular" />
+          <PersonListEditor items={persons} onChange={setPersons} addRole="regular" suggestedIds={frequentIds} />
         </div>
 
         <div className="form-actions">

@@ -15,10 +15,12 @@ interface Props {
   /** 新規追加時の役割 */
   addRole?: AppearanceRole;
   pickerLabel?: string;
+  /** 「よく出る人」候補（personId、上位から） */
+  suggestedIds?: string[];
 }
 
 /** 人物リストの編集（追加・削除・並び替え・役割切り替え） */
-export function PersonListEditor({ items, onChange, showRole = false, addRole = 'guest', pickerLabel }: Props) {
+export function PersonListEditor({ items, onChange, showRole = false, addRole = 'guest', pickerLabel, suggestedIds = [] }: Props) {
   const { personById } = useData();
 
   const move = (i: number, d: -1 | 1) => {
@@ -84,6 +86,23 @@ export function PersonListEditor({ items, onChange, showRole = false, addRole = 
         placeholder="名前・別名で検索／新規追加"
         onPick={(personId) => onChange([...items, { personId, role: addRole }])}
       />
+      {suggestedIds.length > 0 && (
+        <div className="frequent">
+          <span className="frequent-label">よく出る人</span>
+          <div className="chips">
+            {suggestedIds.map((id) => (
+              <button
+                key={id}
+                type="button"
+                className="chip chip-add"
+                onClick={() => onChange([...items, { personId: id, role: addRole }])}
+              >
+                ＋ {personById.get(id)?.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

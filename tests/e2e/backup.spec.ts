@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { disableShare, idbCount, mockShare, open, seed, sharedFiles, type Seed } from './helpers';
+import { disableShare, idbCount, mockShare, open, seed, sharedFiles, sharedTexts, type Seed } from './helpers';
 
 /** アップロード用ファイルは ASCII だけのパスに置く（日本語を含むパスだとブラウザが読めないことがある） */
 const uploadPath = (name: string) => join(mkdtempSync(join(tmpdir(), 'radiolog-e2e-')), name);
@@ -24,7 +24,10 @@ test('保存（ダウンロード）→ 不正ファイルは拒否 → 置き�
   const path = info.outputPath('backup.json');
   await dl.saveAs(path);
   const json = JSON.parse(readFileSync(path, 'utf8'));
-  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 2 });
+  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 2, appUrl: expect.stringMatching(/^http:\/\/localhost:4173\/radio-log\/$/) });
+  expect(json.howToRestore).toContain('バックアップファイルを選択');
+  // データ画面にアプリの URL
+  await expect(page.locator('.app-url')).toHaveText(json.appUrl);
   expect(json.episodeLogs[0].links).toEqual([]);
   expect(json.episodeLogs).toHaveLength(2);
   expect(json.episodeAppearances).toHaveLength(1);
@@ -64,6 +67,11 @@ test('バックアップを送る：共有シート、Android は .txt にフォ
   expect(f.name).toMatch(/\.txt$/);
   expect(f.type).toBe('text/plain');
   expect(JSON.parse(f.text ?? '{}').episodeLogs).toHaveLength(2);
+  // 本文にアプリの URL と復元のしかた（機種変更用）
+  const [body] = await sharedTexts(page);
+  expect(body).toContain('http://localhost:4173/radio-log/');
+  expect(body).toContain('バックアップファイルを選択');
+  expect(body).not.toContain('#');
   await expect(page.getByText('まだありません')).toHaveCount(0); // 最終バックアップ日時が入る
 });
 

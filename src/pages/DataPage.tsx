@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
-import { BackupValidationError, validateBackup } from '../db/backup';
+import { appUrl, BackupValidationError, validateBackup } from '../db/backup';
 import { replaceAllData } from '../db/repo';
 import { canShareFiles, downloadBackup, getLastBackupAt, shareBackup } from '../lib/backupActions';
 import { useData } from '../state/DataContext';
@@ -157,6 +157,23 @@ export function DataPage() {
         <p className="muted">
           全データを1つのファイルにします。<strong>「送る」</strong>を押すと共有画面が開くので、Gmail（自分宛て）・LINE の Keep メモ・Google ドライブ・iCloud の「ファイル」などを選ぶと、スマホの外に保管できます。
         </p>
+        <p className="muted">送るときの本文には、このアプリの URL と復元のしかたも入ります（機種変更したとき用）。</p>
+        <div className="app-url-row">
+          <span className="app-url-label">アプリの URL</span>
+          <code className="app-url">{appUrl()}</code>
+          <button
+            type="button"
+            className="btn btn-small"
+            onClick={() =>
+              void navigator.clipboard
+                ?.writeText(appUrl())
+                .then(() => toast('URL をコピーしました'))
+                .catch(() => toast('コピーできませんでした。長押しでコピーしてください'))
+            }
+          >
+            コピー
+          </button>
+        </div>
         <p className="backup-last">
           最後のバックアップ：<strong>{lastBackup ? lastBackup.toLocaleString('ja-JP', { dateStyle: 'medium', timeStyle: 'short' }) : 'まだありません'}</strong>
         </p>

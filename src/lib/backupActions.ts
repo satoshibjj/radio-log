@@ -2,7 +2,7 @@
  * バックアップの「送る（共有）」「保存（ダウンロード）」と、最終バックアップ日時の管理。
  * 共有はスマホの共有シート（Web Share API）を使う：Gmail・LINE Keep・Google ドライブ・iCloud「ファイル」などへ。
  */
-import { backupFileName, buildBackup } from '../db/backup';
+import { backupFileName, backupShareText, buildBackup } from '../db/backup';
 import type { DataSnapshot } from '../db/types';
 
 const KEY_LAST = 'radiolog.lastBackupAt';
@@ -80,7 +80,8 @@ export async function shareBackup(data: DataSnapshot): Promise<BackupResult> {
   const file = typeof navigator.share === 'function' ? candidates.find((f) => navigator.canShare?.({ files: [f] })) : undefined;
   if (file) {
     try {
-      await navigator.share({ files: [file], title: 'Radio Log バックアップ' });
+      // 本文にアプリの URL と復元のしかたを入れる（機種変更したときに、どこで復元するか分かるように）
+      await navigator.share({ files: [file], title: 'Radio Log バックアップ', text: backupShareText() });
       markBackedUp();
       return 'shared';
     } catch (err) {

@@ -15,6 +15,23 @@ export interface BackupFile extends DataSnapshot {
   appName: string;
   schemaVersion: number;
   exportedAt: string;
+  /** 書き出したアプリの URL（機種変更のとき、どこで復元するか分かるように。読み込み時は使わない） */
+  appUrl?: string;
+  /** 復元のしかた（人が読む用。読み込み時は使わない） */
+  howToRestore?: string;
+}
+
+/** このアプリの URL（# 以降を除く） */
+export function appUrl(): string {
+  return typeof location === 'undefined' ? '' : `${location.origin}${location.pathname}`;
+}
+
+export const HOW_TO_RESTORE =
+  '新しいスマホでアプリの URL を開き、ホームの「データのバックアップ」→「バックアップファイルを選択」でこのファイルを読み込むと復元できます。';
+
+/** バックアップを送るときの本文（アプリの URL と復元のしかた） */
+export function backupShareText(url = appUrl()): string {
+  return `Radio Log のバックアップです。\nアプリの URL：${url}\n${HOW_TO_RESTORE}`;
 }
 
 export function buildBackup(data: DataSnapshot): BackupFile {
@@ -22,6 +39,8 @@ export function buildBackup(data: DataSnapshot): BackupFile {
     appName: APP_NAME,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
+    appUrl: appUrl(),
+    howToRestore: HOW_TO_RESTORE,
     programs: data.programs,
     persons: data.persons,
     episodeLogs: data.episodeLogs,

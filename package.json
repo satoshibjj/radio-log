@@ -1,7 +1,7 @@
 {
   "name": "radio-log",
   "private": true,
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Radio Log - リピートしたいラジオ回ログ PWA（IndexedDBローカル保存）",
   "type": "module",
   "scripts": {

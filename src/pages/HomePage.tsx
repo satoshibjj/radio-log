@@ -125,15 +125,22 @@ export function HomePage() {
         <svg viewBox="0 0 288 64" preserveAspectRatio="xMidYMax meet">
           <rect x="0" y="52" width="288" height="12" fill="#0a1326" />
           <line x1="0" y1="52" x2="288" y2="52" stroke="#7f77dd" strokeWidth="1" opacity="0.6" />
-          <path d="M18 52 L20 36 L30 30 L96 26 L124 8 L196 6 L226 22 L268 26 L272 40 L270 52 Z" fill="#1c2c52" stroke="#7f77dd" strokeWidth="1" />
-          <path d="M130 11 L160 10 L160 24 L118 25 Z M166 10 L194 9 L218 23 L166 24 Z" fill="#534ab7" opacity="0.55" />
-          <line x1="22" y1="39" x2="270" y2="36" stroke="#b4b2a9" strokeWidth="1.2" opacity="0.8" />
-          <rect x="18" y="35" width="10" height="4" fill="#faeeda" />
+          {/* 紫のボディ */}
+          <path d="M18 52 L20 36 L30 30 L96 26 L124 8 L196 6 L226 22 L268 26 L272 40 L270 52 Z" fill="#534ab7" stroke="#3c3489" strokeWidth="1" />
+          {/* 金のボンネット */}
+          <path d="M21 37 L30 30.5 L96 26.5 L119 25.5 L120 32 L23 40 Z" fill="#d4a93c" stroke="#a87f1c" strokeWidth="0.6" />
+          {/* 窓 */}
+          <path d="M130 11 L160 10 L160 24 L118 25 Z M166 10 L194 9 L218 23 L166 24 Z" fill="#0f1b33" stroke="#afa9ec" strokeWidth="0.6" />
+          <line x1="24" y1="43" x2="270" y2="40" stroke="#cecbf6" strokeWidth="1" opacity="0.7" />
+          <rect x="18" y="36" width="10" height="4" fill="#faeeda" />
           <rect x="264" y="31" width="8" height="5" fill="#e24b4a" />
-          <circle cx="74" cy="53" r="11" fill="#0a1326" stroke="#b4b2a9" strokeWidth="2" />
-          <circle cx="74" cy="53" r="4.5" fill="none" stroke="#b4b2a9" strokeWidth="1.5" />
-          <circle cx="222" cy="53" r="11" fill="#0a1326" stroke="#b4b2a9" strokeWidth="2" />
-          <circle cx="222" cy="53" r="4.5" fill="none" stroke="#b4b2a9" strokeWidth="1.5" />
+          {/* 金のホイール */}
+          <circle cx="74" cy="53" r="11" fill="#0a1326" stroke="#2c2c2a" strokeWidth="2" />
+          <circle cx="74" cy="53" r="6.5" fill="#d4a93c" stroke="#a87f1c" strokeWidth="1" />
+          <circle cx="74" cy="53" r="2" fill="#a87f1c" />
+          <circle cx="222" cy="53" r="11" fill="#0a1326" stroke="#2c2c2a" strokeWidth="2" />
+          <circle cx="222" cy="53" r="6.5" fill="#d4a93c" stroke="#a87f1c" strokeWidth="1" />
+          <circle cx="222" cy="53" r="2" fill="#a87f1c" />
         </svg>
       </div>
 

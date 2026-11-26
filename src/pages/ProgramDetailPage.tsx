@@ -53,7 +53,7 @@ export function ProgramDetailPage() {
             ) : (
               <div className="chips">
                 {program.defaultPersonIds.map((pid) => (
-                  <Link key={pid} to={`/?person=${encodeURIComponent(pid)}`} className="chip">
+                  <Link key={pid} to={`/logs?person=${encodeURIComponent(pid)}`} className="chip">
                     {personById.get(pid)?.name ?? '?'}
                   </Link>
                 ))}

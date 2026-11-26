@@ -10,8 +10,8 @@
 - **並び替え**：リピート帳は 新しい順／古い順／番組ごと（見出し付き）／追加した順。
 - **入力補助（任意）**：番組名は iTunes Search API（Apple Podcasts にある番組のみ。radiko のみ・Spotify 独占配信の番組等は手入力）、人名は Wikipedia から候補を検索できます（無料・APIキー不要）。番組名は入力に合わせて自動で候補表示（検索語のみ送信）、人名はボタンを押した時だけ検索します。記録データは送信しません。放送局は主要局のチップからワンタップで選べます。
 - **見返す楽しみ**：🎲「おまかせ1本」でランダムに1回を選出、詳細画面から1回分、リピート帳から表示中の上位5件をシェア用PNG画像（1080×1350）にして保存・共有できます。
-- **使い方ガイド**：アプリ内の「？使い方」からいつでも確認できます。
-- **バックアップ**：「その他」→「バックアップを送る」でスマホの共有画面から Gmail（自分宛て）・LINE Keep・Google ドライブ等へ保管。14日バックアップしていないとリピート帳でお知らせします。復元は同画面からファイル（.json / .txt）を読み込み（置き換え）。
+- **ホーム**：アプリの紹介・すぐやる操作（追加／おまかせ）・最近の回・使い方ガイド・バックアップをまとめた入口画面。
+- **バックアップ**：ホームの「データのバックアップ」→「バックアップを送る」でスマホの共有画面から Gmail（自分宛て）・LINE Keep・Google ドライブ等へ保管。14日バックアップしていないとリピート帳でお知らせします。復元は同画面からファイル（.json / .txt）を読み込み（置き換え）。
 
 ## 開発
 
@@ -33,8 +33,8 @@ src/
   db/        types.ts（型）/ idb.ts（DB接続・トランザクション）/ repo.ts（CRUD・整合性）/ backup.ts（JSON入出力）
   state/     DataContext.tsx（全データのスナップショットと再読込）
   components/ Layout, PersonPicker, PersonListEditor, LogCard, UiProvider（確認ダイアログ・トースト）, UpdateBanner
-  pages/     S1 LogListPage（リピート帳）/ S2 ProgramListPage / S3 ProgramDetailPage / S4 ProgramFormPage
-             S5 LogFormPage / S6 LogDetailPage / S7 DataPage（その他）/ PersonsPage（出演者）/ GuidePage
+  pages/     HomePage（ホーム）/ S1 LogListPage（リピート帳）/ S2 ProgramListPage / S3 ProgramDetailPage / S4 ProgramFormPage
+             S5 LogFormPage / S6 LogDetailPage / S7 DataPage（バックアップ）/ PersonsPage（出演者）
   lib/       shareImage.ts（Canvas でシェア画像描画）/ external.ts（iTunes・Wikipedia 検索）/ suggest.ts など
 ```
 

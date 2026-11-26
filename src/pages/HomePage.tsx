@@ -1,0 +1,140 @@
+import { useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BackupReminder } from '../components/BackupReminder';
+import { GuideContent } from '../components/GuideContent';
+import { LogCard } from '../components/LogCard';
+import { RandomPickModal } from '../components/RandomPickModal';
+import { useData } from '../state/DataContext';
+import { getLastBackupAt } from '../lib/backupActions';
+
+const RECENT_COUNT = 3;
+/** この件数未満のうちは使い方ガイドを開いた状態で表示 */
+const GUIDE_OPEN_UNDER = 3;
+
+/** ホーム：アプリの入口（紹介・すぐやる操作・最近の回・使い方・バックアップ） */
+export function HomePage() {
+  const { data, loading } = useData();
+  const navigate = useNavigate();
+  const logs = data.episodeLogs;
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const [drawCount, setDrawCount] = useState(0);
+  const lastPickedId = useRef<string | null>(null);
+
+  const recent = useMemo(
+    () => [...logs].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0)).slice(0, RECENT_COUNT),
+    [logs],
+  );
+  const lastBackup = getLastBackupAt();
+  const hasPrograms = data.programs.length > 0;
+
+  const draw = () => {
+    if (logs.length === 0) return;
+    const pool = logs.length >= 2 ? logs.filter((l) => l.id !== lastPickedId.current) : logs;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    lastPickedId.current = pick.id;
+    setPickedId(pick.id);
+    setDrawCount((n) => n + 1);
+  };
+  const picked = pickedId ? logs.find((l) => l.id === pickedId) : undefined;
+
+  return (
+    <>
+      <header className="home-hero">
+        <div className="home-hero-kicker">AM · FM · PODCAST</div>
+        <h1 className="home-title">Radio Log</h1>
+        <p className="home-tagline">
+          ラジオの<strong>「また聴きたい回」</strong>をストックするアプリ
+        </p>
+        <div className="dial-scale home-dial" aria-hidden="true" />
+      </header>
+
+      {!loading && logs.length > 0 && <BackupReminder />}
+
+      <section className="home-actions" aria-label="すぐやる操作">
+        {hasPrograms || loading ? (
+          <Link to="/logs/new" className="btn btn-primary btn-block btn-large">
+            ＋ また聴きたい回を追加
+          </Link>
+        ) : (
+          <Link to="/programs/new" className="btn btn-primary btn-block btn-large">
+            ① まず番組を登録する
+          </Link>
+        )}
+        {logs.length > 0 && (
+          <button type="button" className="btn btn-block home-random" onClick={draw}>
+            🎲 おまかせ1本（今日聴く回を選ぶ）
+          </button>
+        )}
+      </section>
+
+      {logs.length > 0 && (
+        <section aria-labelledby="home-recent">
+          <h2 id="home-recent" className="section-title">
+            最近追加した回
+          </h2>
+          <div className="card-list">
+            {recent.map((l) => (
+              <LogCard key={l.id} log={l} />
+            ))}
+          </div>
+          <Link to="/logs" className="btn btn-block home-more">
+            リピート帳をすべて見る（{logs.length}件）›
+          </Link>
+        </section>
+      )}
+
+      {(logs.length > 0 || data.programs.length > 0 || data.persons.length > 0) && (
+      <section className="card stats-card home-stats" aria-label="記録の数">
+        <Link to="/logs" className="stat">
+          <span className="stat-num">{logs.length}</span>
+          <span className="stat-label">リピート回</span>
+        </Link>
+        <Link to="/programs" className="stat">
+          <span className="stat-num">{data.programs.length}</span>
+          <span className="stat-label">番組</span>
+        </Link>
+        <Link to="/persons" className="stat">
+          <span className="stat-num">{data.persons.length}</span>
+          <span className="stat-label">出演者</span>
+        </Link>
+      </section>
+      )}
+
+      {!loading && (
+        <details className="home-guide card" open={logs.length < GUIDE_OPEN_UNDER}>
+          <summary>
+            <span className="home-guide-icon" aria-hidden="true">
+              📻
+            </span>
+            かんたん使い方ガイド
+          </summary>
+          <div className="home-guide-body">
+            <GuideContent />
+          </div>
+        </details>
+      )}
+
+      <Link to="/data" className="card home-data">
+        <span className="home-data-main">
+          <strong>データのバックアップ・復元</strong>
+          <span className="muted">
+            最後のバックアップ：{lastBackup ? lastBackup.toLocaleDateString('ja-JP') : 'まだありません'}
+          </span>
+        </span>
+        <span aria-hidden="true">›</span>
+      </Link>
+
+      {picked && (
+        <RandomPickModal
+          log={picked}
+          drawCount={drawCount}
+          scopeLabel={`全 ${logs.length} 件から抽選`}
+          canReroll={logs.length >= 2}
+          onDetail={() => navigate(`/logs/${picked.id}`)}
+          onReroll={draw}
+          onClose={() => setPickedId(null)}
+        />
+      )}
+    </>
+  );
+}

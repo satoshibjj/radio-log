@@ -172,7 +172,7 @@ export function PersonsPage() {
                   <span className="person-card-name">{p.name}</span>
                   {p.aliases.length > 0 && <span className="person-card-aliases">別名：{p.aliases.join('、')}</span>}
                 </button>
-                <Link to={`/?person=${encodeURIComponent(p.id)}`} className="count-meter" aria-label={`${p.name} の出演リピート回`}>
+                <Link to={`/logs?person=${encodeURIComponent(p.id)}`} className="count-meter" aria-label={`${p.name} の出演リピート回`}>
                   <span className="count-meter-num">{appearanceCount.get(p.id) ?? 0}</span>
                   <span className="count-meter-unit">出演</span>
                 </Link>

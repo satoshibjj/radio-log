@@ -1770,3 +1770,139 @@ a.card:active {
   background: #fbf3dc;
   color: #6b4e05;
 }
+
+/* ------------------------------------------------- ホーム */
+.home-hero {
+  margin: 0 -16px 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px 0;
+  background: var(--paper-2);
+  border-bottom: 2px solid var(--ink);
+  text-align: center;
+}
+
+.home-hero-kicker {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.home-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.home-tagline {
+  margin: 6px 0 12px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.home-tagline strong {
+  color: var(--rust-dark);
+}
+
+.home-dial {
+  margin: 0 -20px;
+}
+
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.home-random {
+  border-color: var(--ink);
+  background: radial-gradient(circle at 30% 30%, #fff3cf 0%, var(--brass-soft) 80%);
+}
+
+.home-more {
+  margin-top: 10px;
+}
+
+.home-stats {
+  margin-top: 18px;
+}
+
+.home-stats .stat {
+  min-height: var(--tap);
+  justify-content: center;
+}
+
+.home-guide {
+  margin-bottom: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-guide > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 16px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.home-guide > summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-guide > summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--ink-mute);
+  transition: transform 0.15s;
+}
+
+.home-guide[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.home-guide[open] > summary {
+  border-bottom: 1.5px dashed var(--line-strong);
+}
+
+.home-guide-icon {
+  font-size: 20px;
+}
+
+.home-guide-body {
+  padding: 12px 14px 16px;
+  background: var(--paper);
+}
+
+.home-guide-body .guide-steps {
+  margin-top: 0;
+}
+
+.guide-sub {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 18px 0 8px;
+}
+
+.home-data {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.home-data-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-data-main .muted {
+  font-size: 12px;
+}

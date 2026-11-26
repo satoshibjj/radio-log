@@ -11,7 +11,7 @@ import { LogFormPage } from './pages/LogFormPage';
 import { LogDetailPage } from './pages/LogDetailPage';
 import { PersonsPage } from './pages/PersonsPage';
 import { DataPage } from './pages/DataPage';
-import { GuidePage } from './pages/GuidePage';
+import { HomePage } from './pages/HomePage';
 
 /** 画面遷移時に先頭へスクロール */
 function ScrollToTop() {
@@ -45,7 +45,8 @@ export default function App() {
           <Layout>
             <DbErrorBanner />
             <Routes>
-              <Route path="/" element={<LogListPage />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/logs" element={<LogListPage />} />
               <Route path="/programs" element={<ProgramListPage />} />
               <Route path="/programs/new" element={<ProgramFormPage />} />
               <Route path="/programs/:id" element={<ProgramDetailPage />} />
@@ -55,7 +56,7 @@ export default function App() {
               <Route path="/logs/:id/edit" element={<LogFormPage />} />
               <Route path="/persons" element={<PersonsPage />} />
               <Route path="/data" element={<DataPage />} />
-              <Route path="/guide" element={<GuidePage />} />
+              <Route path="/guide" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>

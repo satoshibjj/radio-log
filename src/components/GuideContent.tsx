@@ -1,17 +1,9 @@
 import { Link } from 'react-router-dom';
-import { PageHeader } from '../components/Layout';
 
-/** かんたん使い方ガイド */
-export function GuidePage() {
+/** かんたん使い方ガイド（ホーム画面に埋め込み） */
+export function GuideContent() {
   return (
     <>
-      <PageHeader title="使い方ガイド" kicker="HOW TO" back />
-
-      <section className="card guide-intro">
-        <p>
-          <strong>「また聴きたい！」と思った放送回だけを集めておく</strong>アプリです。全部の放送を記録する必要はありません。
-        </p>
-      </section>
 
       <ol className="guide-steps">
         <li className="card guide-step">
@@ -46,21 +38,21 @@ export function GuidePage() {
         </li>
       </ol>
 
-      <h2 className="section-title">下のボタンの意味</h2>
+      <h3 className="guide-sub">下のボタンの意味</h3>
       <dl className="card guide-tabs">
+        <dt>ホーム</dt>
+        <dd>この画面。使い方・最近の回・バックアップ</dd>
         <dt>リピート帳</dt>
-        <dd>追加した「また聴きたい回」の一覧（ホーム）</dd>
-        <dt>番組</dt>
-        <dd>記録するときに選ぶ番組の一覧</dd>
+        <dd>追加した「また聴きたい回」の一覧（絞り込み・並び替え・おまかせ）</dd>
         <dt>＋ 回を追加</dt>
         <dd>また聴きたい回を1件追加</dd>
+        <dt>番組</dt>
+        <dd>記録するときに選ぶ番組の一覧</dd>
         <dt>出演者</dt>
         <dd>パーソナリティ・ゲストの名簿</dd>
-        <dt>その他</dt>
-        <dd>バックアップ（保存・復元）と、この使い方</dd>
       </dl>
 
-      <h2 className="section-title">よくある質問</h2>
+      <h3 className="guide-sub">よくある質問</h3>
       <div className="guide-faq">
         <details className="card">
           <summary>番組や出演者を登録すると「お気に入り」になる？</summary>
@@ -87,13 +79,13 @@ export function GuidePage() {
         <details className="card">
           <summary>データはどこに保存される？</summary>
           <p>
-            この端末のブラウザの中だけです。外部には送られません。機種変更やブラウザのデータ削除に備えて、ときどき「その他」→<strong>「バックアップを送る」</strong>で、メール（自分宛て）・LINE の Keep・Google ドライブなどに保管してください。14日たつとリピート帳でお知らせします。
+            この端末のブラウザの中だけです。外部には送られません。機種変更やブラウザのデータ削除に備えて、ときどきホームの<strong>「データのバックアップ」</strong>→「バックアップを送る」で、メール（自分宛て）・LINE の Keep・Google ドライブなどに保管してください。14日たつとリピート帳でお知らせします。
           </p>
         </details>
         <details className="card">
           <summary>機種変更したら？</summary>
           <p>
-            古いスマホで「その他」→「バックアップを送る」で自分宛てなどに送り、新しいスマホでそのファイルを保存してから「その他」→「バックアップファイルを選択」で読み込みます。
+            古いスマホでホームの「データのバックアップ」→「バックアップを送る」で自分宛てなどに送り、新しいスマホでそのファイルを保存してから、同じ画面の「バックアップファイルを選択」で読み込みます。
           </p>
         </details>
         <details className="card">
@@ -102,11 +94,6 @@ export function GuidePage() {
         </details>
       </div>
 
-      <div className="form-actions">
-        <Link to="/" className="btn btn-primary btn-block btn-large">
-          リピート帳へ
-        </Link>
-      </div>
     </>
   );
 }

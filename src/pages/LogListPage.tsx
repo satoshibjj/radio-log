@@ -5,7 +5,6 @@ import { LogCard } from '../components/LogCard';
 import { PersonPicker } from '../components/PersonPicker';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useUi } from '../components/UiProvider';
-import { BackupReminder } from '../components/BackupReminder';
 import { ShareImageModal } from '../components/ShareImageModal';
 import { createTopImage } from '../lib/shareImage';
 import { useData } from '../state/DataContext';
@@ -150,14 +149,7 @@ export function LogListPage() {
         title="リピート帳"
         kicker="REPEAT LOG"
         description="「また聴きたい！」と思った放送回の一覧です。"
-        actions={
-          <Link to="/guide" className="btn btn-small" aria-label="使い方ガイド">
-            ？使い方
-          </Link>
-        }
       />
-      {!isEmpty && <BackupReminder />}
-
       {!isEmpty && (
       <section className="filter-box" aria-label="出演者で絞り込み">
         <PersonPicker
@@ -195,33 +187,15 @@ export function LogListPage() {
 
       {!loading && logs.length === 0 ? (
         data.episodeLogs.length === 0 ? (
-          <section className="card welcome">
-            <h2>はじめての方へ</h2>
-            <p>また聴きたい放送回をストックするアプリです。3ステップで使えます。</p>
-            <ol className="welcome-steps">
-              <li className={data.programs.length > 0 ? 'is-done' : ''}>
-                <strong>番組を登録</strong>（最初だけ）
-              </li>
-              <li>
-                真ん中の赤い<strong>「＋ 回を追加」</strong>で、また聴きたい回を追加
-              </li>
-              <li>
-                ここ<strong>「リピート帳」</strong>で見返す
-              </li>
-            </ol>
-            {data.programs.length === 0 ? (
-              <Link className="btn btn-primary btn-block" to="/programs/new">
-                ① 番組を登録する
-              </Link>
-            ) : (
-              <Link className="btn btn-primary btn-block" to="/logs/new">
-                ② また聴きたい回を追加する
-              </Link>
-            )}
-            <Link className="btn btn-block" to="/guide">
-              使い方ガイドを見る
+          <EmptyState title="まだリピート回がありません">
+            <p>「また聴きたい！」と思った回を追加すると、ここに並びます。</p>
+            <Link className="btn btn-primary" to={data.programs.length === 0 ? '/programs/new' : '/logs/new'}>
+              {data.programs.length === 0 ? 'まず番組を登録する' : '＋ また聴きたい回を追加'}
             </Link>
-          </section>
+            <Link className="btn btn-small" to="/">
+              使い方はホームへ
+            </Link>
+          </EmptyState>
         ) : (
           <EmptyState title="条件に合うリピート回がありません" />
         )

@@ -26,7 +26,7 @@ export function LogDetailPage() {
       <>
         <PageHeader title="リピート回が見つかりません" back />
         <EmptyState title="削除された可能性があります">
-          <Link to="/" className="btn">
+          <Link to="/logs" className="btn">
             一覧へ
           </Link>
         </EmptyState>
@@ -49,7 +49,7 @@ export function LogDetailPage() {
       await deleteEpisodeLog(log.id);
       await reload();
       toast('リピート回を削除しました');
-      navigate('/', { replace: true });
+      navigate('/logs', { replace: true });
     } catch (err) {
       setDeleting(false);
       await alert('削除できませんでした', errorMessage(err));
@@ -92,7 +92,7 @@ export function LogDetailPage() {
                 type="button"
                 className={`chip ${a.role === 'guest' ? 'is-guest' : ''}`}
                 title="この人が出演しているリピート回を表示"
-                onClick={() => navigate(`/?person=${encodeURIComponent(a.personId)}`)}
+                onClick={() => navigate(`/logs?person=${encodeURIComponent(a.personId)}`)}
               >
                 {personById.get(a.personId)?.name ?? '?'}
                 {a.role === 'guest' && <span className="chip-tag">ゲスト</span>}

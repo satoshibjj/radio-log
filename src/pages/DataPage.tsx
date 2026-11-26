@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
 import { BackupValidationError, validateBackup } from '../db/backup';
@@ -134,12 +133,8 @@ export function DataPage() {
 
   return (
     <>
-      <PageHeader title="その他" kicker="SETTINGS" description="使い方の確認と、データのバックアップ（保存・復元）ができます。" />
+      <PageHeader title="データのバックアップ" kicker="BACKUP" back description="記録を外に保管したり、保管したファイルから戻したりできます。" />
 
-      <Link to="/guide" className="card guide-link">
-        <span>📻 かんたん使い方ガイド</span>
-        <span aria-hidden="true">›</span>
-      </Link>
 
       <section className="card stats-card" aria-label="保存件数">
         <div className="stat">

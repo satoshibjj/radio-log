@@ -76,6 +76,7 @@ export function LogListPage() {
       <section className="filter-box" aria-label="出演者で絞り込み">
         <PersonPicker
           label="出演者で絞り込み（AND）"
+          showFrequentOnFocus
           excludeIds={selected}
           onPick={(id) => setSelected([...selected, id])}
         />

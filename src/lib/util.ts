@@ -93,6 +93,17 @@ export function includesNormalized(haystack: string, needle: string): boolean {
   return normalizeForSearch(haystack).includes(n);
 }
 
+/** 検索の一致度（小さいほど良い。一致しなければ -1） */
+export function matchRank(text: string, query: string): number {
+  const t = normalizeForSearch(text);
+  const q = normalizeForSearch(query);
+  if (!q) return -1;
+  if (t === q) return 0;
+  if (t.startsWith(q)) return 1;
+  if (t.includes(q)) return 2;
+  return -1;
+}
+
 export function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === 'string') return err;

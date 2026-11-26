@@ -1,13 +1,31 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
+import { SuggestInput, type SuggestItem } from '../components/SuggestInput';
 import { useData } from '../state/DataContext';
-import { includesNormalized } from '../lib/util';
+import { includesNormalized, matchRank } from '../lib/util';
 
 /** S2：番組一覧 */
 export function ProgramListPage() {
   const { data, loading, logCountByProgram } = useData();
   const [q, setQ] = useState('');
+  const navigate = useNavigate();
+
+  const suggestions = useMemo<SuggestItem[]>(() => {
+    const out: { item: SuggestItem; rank: number }[] = [];
+    for (const p of data.programs) {
+      const rn = matchRank(p.name, q);
+      const rs = matchRank(p.station, q);
+      const rank = rn >= 0 ? rn : rs >= 0 ? rs + 3 : -1;
+      if (rank < 0) continue;
+      const count = logCountByProgram.get(p.id) ?? 0;
+      out.push({ rank, item: { key: p.id, label: p.name, sub: [p.station, `リピート ${count} 回`].filter(Boolean).join('・') } });
+    }
+    return out
+      .sort((a, b) => a.rank - b.rank || a.item.label.localeCompare(b.item.label, 'ja'))
+      .slice(0, 6)
+      .map((x) => x.item);
+  }, [data.programs, q, logCountByProgram]);
 
   const programs = useMemo(
     () =>
@@ -30,13 +48,14 @@ export function ProgramListPage() {
         }
       />
       <div className="filter-box">
-        <input
-          className="input"
-          type="search"
-          placeholder="番組名・放送局で検索"
+        <SuggestInput
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="番組を検索"
+          onChange={setQ}
+          items={suggestions}
+          onPick={(id) => navigate(`/programs/${id}`)}
+          placeholder="番組名・放送局で検索"
+          ariaLabel="番組を検索"
+          heading="候補（タップで開く）"
         />
       </div>
       {!loading && programs.length === 0 ? (

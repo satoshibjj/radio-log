@@ -15,6 +15,8 @@ interface Props {
   allowCreate?: boolean;
   placeholder?: string;
   label?: string;
+  /** 未入力でタップした時に「よく出る人」を候補表示 */
+  showFrequentOnFocus?: boolean;
 }
 
 interface Match {
@@ -25,18 +27,30 @@ interface Match {
 }
 
 /** 人物を name / aliases から検索して選ぶ入力（サジェスト付き） */
-export function PersonPicker({ excludeIds, onPick, allowCreate = false, placeholder, label }: Props) {
+export function PersonPicker({ excludeIds, onPick, allowCreate = false, placeholder, label, showFrequentOnFocus = false }: Props) {
   const { data, reload } = useData();
   const { toast } = useUi();
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
+  const [focused, setFocused] = useState(false);
   /** Wikipedia 候補（検索した語ごと） */
   const [wiki, setWiki] = useState<{ query: string; loading: boolean; results: WikiPersonCandidate[]; error: string } | null>(null);
   const inputId = useId();
 
   const nq = normalizeForSearch(q);
-  const counts = useMemo(() => appearanceCounts(data.episodeAppearances), [data.episodeAppearances]);
   const exclude = useMemo(() => new Set(excludeIds), [excludeIds]);
+  const counts = useMemo(() => appearanceCounts(data.episodeAppearances), [data.episodeAppearances]);
+  /** よく出る人（未入力時の候補） */
+  const frequent = useMemo(
+    () =>
+      showFrequentOnFocus
+        ? data.persons
+            .filter((p) => !exclude.has(p.id) && (counts.get(p.id) ?? 0) > 0)
+            .sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || a.name.localeCompare(b.name, 'ja'))
+            .slice(0, 8)
+        : [],
+    [showFrequentOnFocus, data.persons, exclude, counts],
+  );
 
   const matches = useMemo<Match[]>(() => {
     if (!nq) return [];
@@ -141,6 +155,8 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
         autoComplete="off"
         enterKeyHint="done"
         onChange={(e) => setQ(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -149,6 +165,24 @@ export function PersonPicker({ excludeIds, onPick, allowCreate = false, placehol
           }
         }}
       />
+      {!nq && focused && frequent.length > 0 && (
+        <ul className="suggest" role="listbox" aria-label="よく出る人">
+          <li className="suggest-head">よく出る人</li>
+          {frequent.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                className="suggest-item"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(p.id)}
+              >
+                <span>{p.name}</span>
+                <span className="suggest-via">出演 {counts.get(p.id) ?? 0} 回</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {nq && (
         <ul className="suggest" role="listbox">
           {matches.map((m) => (

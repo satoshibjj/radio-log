@@ -1,11 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
+import { SuggestInput, type SuggestItem } from '../components/SuggestInput';
 import { useUi } from '../components/UiProvider';
 import { deletePerson, PersonInUseError, savePerson } from '../db/repo';
 import type { Person } from '../db/types';
 import { useData } from '../state/DataContext';
-import { cleanName, errorMessage, includesNormalized, normalizeForSearch, splitAliasText } from '../lib/util';
+import { cleanName, errorMessage, includesNormalized, matchRank, normalizeForSearch, splitAliasText } from '../lib/util';
 
 /** 人物管理（表示名・別名の編集、参照チェック付き削除） */
 export function PersonsPage() {
@@ -27,6 +28,30 @@ export function PersonsPage() {
         .sort((a, b) => a.name.localeCompare(b.name, 'ja')),
     [data.persons, q],
   );
+
+  const suggestions = useMemo<SuggestItem[]>(() => {
+    const out: { item: SuggestItem; rank: number; count: number }[] = [];
+    for (const p of data.persons) {
+      let rank = matchRank(p.name, q);
+      let via = '';
+      if (rank < 0) {
+        for (const a of p.aliases) {
+          const r = matchRank(a, q);
+          if (r >= 0 && (rank < 0 || r + 3 < rank)) {
+            rank = r + 3;
+            via = a;
+          }
+        }
+      }
+      if (rank < 0) continue;
+      const count = appearanceCount.get(p.id) ?? 0;
+      out.push({ rank, count, item: { key: p.id, label: p.name, sub: [via && `別名: ${via}`, `出演 ${count} 回`].filter(Boolean).join('・') } });
+    }
+    return out
+      .sort((a, b) => a.rank - b.rank || b.count - a.count || a.item.label.localeCompare(b.item.label, 'ja'))
+      .slice(0, 6)
+      .map((x) => x.item);
+  }, [data.persons, q, appearanceCount]);
 
   const onDelete = async (p: Person) => {
     const ok = await confirm({
@@ -91,13 +116,19 @@ export function PersonsPage() {
         }
       />
       <div className="filter-box">
-        <input
-          className="input"
-          type="search"
-          placeholder="名前・別名で検索"
+        <SuggestInput
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="人物を検索"
+          onChange={setQ}
+          items={suggestions}
+          onPick={(id) => {
+            const p = data.persons.find((x) => x.id === id);
+            if (!p) return;
+            setQ(p.name);
+            setEditing(p);
+          }}
+          placeholder="名前・別名で検索"
+          ariaLabel="出演者を検索"
+          heading="候補（タップで編集）"
         />
       </div>
 

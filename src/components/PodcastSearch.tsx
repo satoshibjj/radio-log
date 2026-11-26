@@ -87,7 +87,6 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
                     setOpen(false);
                   }}
                 >
-                  {r.artworkUrl && <img src={r.artworkUrl} alt="" width={40} height={40} loading="lazy" referrerPolicy="no-referrer" />}
                   <span className="assist-item-text">
                     <span>{r.name}</span>
                     {r.artist && <span className="suggest-via">{r.artist}</span>}

@@ -146,6 +146,8 @@ export async function searchWikipediaPersons(term: string): Promise<WikiPersonCa
     res = await fetch(`https://ja.wikipedia.org/w/api.php?${params.toString()}`, {
       signal: ctrl.signal,
       credentials: 'omit',
+      // Wikimedia の User-Agent ポリシーに沿ってアプリを識別（ブラウザからは Api-User-Agent を使う）
+      headers: { 'Api-User-Agent': 'RadioLog/1.0 (https://github.com/MuscleStrong1/radio-log)' },
       referrerPolicy: 'no-referrer',
     });
   } catch {

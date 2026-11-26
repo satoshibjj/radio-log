@@ -130,7 +130,7 @@ export function HomePage() {
           {/* 紫のボディ */}
           <path d="M18 52 L20 36 L30 30 L96 26 L124 8 L196 6 L226 22 L268 26 L272 40 L270 52 Z" fill="#534ab7" stroke="#3c3489" strokeWidth="1" />
           {/* 金のボンネット */}
-          <path d="M21 37 L30 30.5 L96 26.5 L119 25.5 L120 32 L23 40 Z" fill="#d4a93c" stroke="#a87f1c" strokeWidth="0.6" />
+          <path d="M20.5 36.5 L30 30.5 L96 26.5 L119 25.5 L119.5 38.5 L22 42 Z" fill="#d4a93c" stroke="#a87f1c" strokeWidth="0.6" />
           {/* 窓 */}
           <path d="M130 11 L160 10 L160 24 L118 25 Z M166 10 L194 9 L218 23 L166 24 Z" fill="#0f1b33" stroke="#afa9ec" strokeWidth="0.6" />
           <line x1="24" y1="43" x2="270" y2="40" stroke="#cecbf6" strokeWidth="1" opacity="0.7" />

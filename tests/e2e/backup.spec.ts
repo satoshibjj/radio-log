@@ -80,6 +80,6 @@ test('ホームのお知らせ：未バックアップ → 送る → 14日後�
   await expect(page.getByText('最後のバックアップから15日')).toBeVisible();
   await page.getByRole('button', { name: 'あとで' }).click();
   await page.reload();
-  await expect(page.getByText('最近追加した回')).toBeVisible();
+  await expect(page.locator('.home-stats')).toBeVisible();
   await expect(page.locator('.backup-reminder')).toHaveCount(0);
 });

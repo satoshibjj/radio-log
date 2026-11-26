@@ -41,7 +41,7 @@ export function GuideContent() {
       <h3 className="guide-sub">下のボタンの意味</h3>
       <dl className="card guide-tabs">
         <dt>ホーム</dt>
-        <dd>この画面。使い方・最近の回・バックアップ</dd>
+        <dd>この画面。使い方・記録の数・バックアップ</dd>
         <dt>リピート帳</dt>
         <dd>追加した「また聴きたい回」の一覧（絞り込み・並び替え・おまかせ・選んでシェア）</dd>
         <dt>＋ 回を追加</dt>

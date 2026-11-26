@@ -1,19 +1,17 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BackupReminder } from '../components/BackupReminder';
 import { GuideContent } from '../components/GuideContent';
-import { LogCard } from '../components/LogCard';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useData } from '../state/DataContext';
 import { getLastBackupAt, shareBackup } from '../lib/backupActions';
 import { useUi } from '../components/UiProvider';
 import { errorMessage } from '../lib/util';
 
-const RECENT_COUNT = 3;
 /** この件数未満のうちは使い方ガイドを開いた状態で表示 */
 const GUIDE_OPEN_UNDER = 3;
 
-/** ホーム：アプリの入口（紹介・すぐやる操作・最近の回・使い方・バックアップ） */
+/** ホーム：アプリの入口（紹介・すぐやる操作・記録の数・使い方・バックアップ） */
 export function HomePage() {
   const { data, loading } = useData();
   const navigate = useNavigate();
@@ -22,10 +20,6 @@ export function HomePage() {
   const [drawCount, setDrawCount] = useState(0);
   const lastPickedId = useRef<string | null>(null);
 
-  const recent = useMemo(
-    () => [...logs].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0)).slice(0, RECENT_COUNT),
-    [logs],
-  );
   const { toast } = useUi();
   const [lastBackup, setLastBackup] = useState<Date | null>(() => getLastBackupAt());
 
@@ -75,21 +69,6 @@ export function HomePage() {
         )}
       </section>
 
-      {logs.length > 0 && (
-        <section aria-labelledby="home-recent">
-          <h2 id="home-recent" className="section-title">
-            最近追加した回
-          </h2>
-          <div className="card-list">
-            {recent.map((l) => (
-              <LogCard key={l.id} log={l} />
-            ))}
-          </div>
-          <Link to="/logs" className="btn btn-block home-more">
-            リピート帳をすべて見る（{logs.length}件）›
-          </Link>
-        </section>
-      )}
 
       {(logs.length > 0 || data.programs.length > 0 || data.persons.length > 0) && (
       <section className="card stats-card home-stats" aria-label="記録の数">

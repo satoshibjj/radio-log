@@ -12,7 +12,7 @@ test('はじめての画面：紹介・最初の一歩・ガイドが開いて�
   expect(errors).toEqual([]);
 });
 
-test('データがある時：最近の3件・ガイドは畳む・バックアップ欄はガイドの上', async ({ page }) => {
+test('データがある時：最近の回は出さない・ガイドは畳む・バックアップ欄はガイドの上', async ({ page }) => {
   await seed(
     page,
     {
@@ -21,7 +21,9 @@ test('データがある時：最近の3件・ガイドは畳む・バックア�
     },
     '/',
   );
-  await expect(page.locator('.log-card .date-badge')).toHaveText([/2026\.11\.05/, /2026\.11\.04/, /2026\.11\.03/]);
+  await expect(page.locator('.home-stats .stat-num')).toHaveText(['5', '1', '0']);
+  await expect(page.locator('.log-card')).toHaveCount(0); // 最近追加した回はホームに出さない（v1.3.1）
+  await expect(page.getByText('最近追加した回')).toHaveCount(0);
   await expect(page.locator('.home-guide')).not.toHaveAttribute('open', '');
   await expect(page.locator('.home-stats .stat-num')).toHaveText(['5', '1', '0']);
   const backupAboveGuide = await page.evaluate(() => {
@@ -35,7 +37,7 @@ test('データがある時：最近の3件・ガイドは畳む・バックア�
   await expect(page.getByText('TUNED IN!')).toBeVisible();
   await page.getByRole('button', { name: '閉じる' }).click();
 
-  await page.getByRole('link', { name: /リピート帳をすべて見る（5件）/ }).click();
+  await page.locator('.home-stats .stat', { hasText: 'リピート回' }).click();
   await expect(page).toHaveURL(/#\/logs$/);
   await expect(page.locator('.nav-item.active')).toContainText('リピート帳');
 

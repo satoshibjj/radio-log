@@ -1822,9 +1822,6 @@ a.card:active {
   background: radial-gradient(circle at 30% 30%, #fff3cf 0%, var(--brass-soft) 80%);
 }
 
-.home-more {
-  margin-top: 10px;
-}
 
 .home-stats {
   margin-top: 18px;

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
-import { BackupValidationError, backupFileName, buildBackup, downloadJson, validateBackup } from '../db/backup';
-import { loadSnapshot, replaceAllData } from '../db/repo';
+import { BackupValidationError, validateBackup } from '../db/backup';
+import { replaceAllData } from '../db/repo';
+import { canShareFiles, downloadBackup, getLastBackupAt, shareBackup } from '../lib/backupActions';
 import { useData } from '../state/DataContext';
 import { errorMessage } from '../lib/util';
 
@@ -28,17 +29,27 @@ export function DataPage() {
       .catch(() => setPersist('unsupported'));
   }, []);
 
-  const onExport = async () => {
-    setBusy(true);
+  const [lastBackup, setLastBackup] = useState<Date | null>(() => getLastBackupAt());
+  const shareable = canShareFiles();
+
+  const onShare = async () => {
     try {
-      // 画面のキャッシュではなく DB から直接読み出して出力
-      const snap = await loadSnapshot();
-      downloadJson(buildBackup(snap), backupFileName());
-      toast('エクスポートしました');
+      const r = await shareBackup(data);
+      if (r === 'cancelled') return;
+      setLastBackup(getLastBackupAt());
+      toast(r === 'shared' ? 'バックアップを送りました' : 'バックアップを保存しました');
     } catch (err) {
-      await alert('エクスポートできませんでした', errorMessage(err));
-    } finally {
-      setBusy(false);
+      await alert('バックアップできませんでした', errorMessage(err));
+    }
+  };
+
+  const onExport = () => {
+    try {
+      downloadBackup(data);
+      setLastBackup(getLastBackupAt());
+      toast('バックアップを保存しました');
+    } catch (err) {
+      void alert('バックアップできませんでした', errorMessage(err));
     }
   };
 
@@ -146,28 +157,43 @@ export function DataPage() {
       </section>
 
       <section className="card section-card">
-        <h2 className="section-title small">バックアップを保存（エクスポート）</h2>
-        <p className="muted">全データをJSONファイルに保存します。機種変更やバックアップに使えます。</p>
-        <button type="button" className="btn btn-primary btn-block" onClick={() => void onExport()} disabled={busy}>
-          JSONをダウンロード
+        <h2 className="section-title small">バックアップ（エクスポート）</h2>
+        <p className="muted">
+          全データを1つのファイルにします。<strong>「送る」</strong>を押すと共有画面が開くので、Gmail（自分宛て）・LINE の Keep メモ・Google ドライブ・iCloud の「ファイル」などを選ぶと、スマホの外に保管できます。
+        </p>
+        <p className="backup-last">
+          最後のバックアップ：<strong>{lastBackup ? lastBackup.toLocaleString('ja-JP', { dateStyle: 'medium', timeStyle: 'short' }) : 'まだありません'}</strong>
+        </p>
+        {shareable && (
+          <button type="button" className="btn btn-primary btn-block btn-large" onClick={() => void onShare()} disabled={busy}>
+            📤 バックアップを送る
+          </button>
+        )}
+        <button
+          type="button"
+          className={`btn btn-block ${shareable ? '' : 'btn-primary btn-large'}`}
+          onClick={onExport}
+          disabled={busy}
+        >
+          この端末にファイルを保存
         </button>
       </section>
 
       <section className="card section-card">
         <h2 className="section-title small">バックアップから復元（インポート）</h2>
         <p className="muted">
-          エクスポートしたJSONを読み込み、<strong>現在のデータを消去して置き換え</strong>ます。
+          バックアップしたファイル（.json または .txt）を読み込み、<strong>現在のデータを消去して置き換え</strong>ます。
         </p>
-        <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => void onFile(e)} />
+        <input ref={fileRef} type="file" accept="application/json,.json,text/plain,.txt" hidden onChange={(e) => void onFile(e)} />
         <button type="button" className="btn btn-danger-outline btn-block" onClick={() => fileRef.current?.click()} disabled={busy}>
-          JSONファイルを選択
+          バックアップファイルを選択
         </button>
       </section>
 
       <section className="card section-card">
         <h2 className="section-title small">保存について</h2>
         <p className="muted">
-          データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除で消えるため、定期的なエクスポートをおすすめします。
+          データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除や機種変更で消えるため、ときどきバックアップしてください（14日たつとリピート帳でお知らせします）。ホーム画面に追加して使うと、Safari の履歴削除の影響を受けにくくなります。
         </p>
         <p className="muted">
           番組登録で番組名を入力したとき（候補表示のため）と、出演者の「Wikipediaで候補を検索」を押したときだけ、検索語が Apple（Apple Podcasts の検索）または Wikipedia に送信されます。記録したデータが送られることはありません。

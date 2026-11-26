@@ -1649,3 +1649,105 @@ a.card:active {
   font-weight: 700;
   color: #8a5a00;
 }
+
+/* ------------------------------------------------- 並び順・グループ */
+.sort-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 10px;
+  margin: 0 -16px 0;
+  padding-left: 16px;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+
+.sort-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sort-chip {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.sort-chip.is-selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.log-group + .log-group {
+  margin-top: 18px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 2px 8px;
+  font-size: 16px;
+  font-weight: 800;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.group-title a {
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+.group-count {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--rust-dark);
+}
+
+/* ------------------------------------------------- バックアップ */
+.backup-reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--brass);
+  border-radius: var(--radius);
+  background: #fbf3dc;
+}
+
+.backup-reminder-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.backup-reminder-text strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.backup-reminder-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.backup-last {
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.section-card .btn + .btn {
+  margin-top: 8px;
+}

@@ -5,12 +5,32 @@ import { LogCard } from '../components/LogCard';
 import { PersonPicker } from '../components/PersonPicker';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useUi } from '../components/UiProvider';
+import { BackupReminder } from '../components/BackupReminder';
 import { useData } from '../state/DataContext';
 import { compareLogsDesc } from '../lib/util';
+import type { EpisodeLog } from '../db/types';
+
+type SortKey = 'new' | 'old' | 'program' | 'added';
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: 'new', label: '新しい順' },
+  { key: 'old', label: '古い順' },
+  { key: 'program', label: '番組ごと' },
+  { key: 'added', label: '追加した順' },
+];
+const SORT_STORAGE = 'radiolog.sort';
+const isSortKey = (v: unknown): v is SortKey => SORTS.some((s) => s.key === v);
+function loadSort(): SortKey {
+  try {
+    const v = localStorage.getItem(SORT_STORAGE);
+    return isSortKey(v) ? v : 'new';
+  } catch {
+    return 'new';
+  }
+}
 
 /** S1：聴取ログ一覧（ホーム） */
 export function LogListPage() {
-  const { data, loading, personById, appearancesByLog } = useData();
+  const { data, loading, personById, programById, appearancesByLog } = useData();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useUi();
@@ -25,9 +45,25 @@ export function LogListPage() {
     [params, personById],
   );
 
+  // 並び順：URL の ?sort= を優先、なければ前回の選択
+  const sortParam = params.get('sort');
+  const sort: SortKey = isSortKey(sortParam) ? sortParam : loadSort();
+
   const setSelected = (ids: string[]) => {
     const next = new URLSearchParams();
     ids.forEach((id) => next.append('person', id));
+    if (isSortKey(sortParam)) next.set('sort', sortParam);
+    setParams(next, { replace: true });
+  };
+
+  const setSort = (key: SortKey) => {
+    try {
+      localStorage.setItem(SORT_STORAGE, key);
+    } catch {
+      /* noop */
+    }
+    const next = new URLSearchParams(params);
+    next.set('sort', key);
     setParams(next, { replace: true });
   };
 
@@ -40,6 +76,28 @@ export function LogListPage() {
       return selected.every((id) => ids.has(id));
     });
   }, [data.episodeLogs, selected, appearancesByLog]);
+
+  /** 表示用の並び（番組ごとは見出し付きグループ） */
+  const groups = useMemo<{ key: string; title?: string; sub?: string; logs: EpisodeLog[] }[]>(() => {
+    if (sort === 'old') return [{ key: 'all', logs: [...logs].reverse() }];
+    if (sort === 'added')
+      return [{ key: 'all', logs: [...logs].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0)) }];
+    if (sort === 'program') {
+      const map = new Map<string, EpisodeLog[]>();
+      for (const l of logs) {
+        const list = map.get(l.programId);
+        if (list) list.push(l);
+        else map.set(l.programId, [l]);
+      }
+      return [...map.entries()]
+        .map(([pid, list]) => {
+          const p = programById.get(pid);
+          return { key: pid, title: p?.name ?? '（不明な番組）', sub: p?.station, logs: list };
+        })
+        .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'ja'));
+    }
+    return [{ key: 'all', logs }];
+  }, [logs, sort, programById]);
 
   const filtered = selected.length > 0;
   /** まだ1件も無い（はじめての状態） */
@@ -72,6 +130,8 @@ export function LogListPage() {
           </Link>
         }
       />
+      {!isEmpty && <BackupReminder />}
+
       {!isEmpty && (
       <section className="filter-box" aria-label="出演者で絞り込み">
         <PersonPicker
@@ -140,11 +200,37 @@ export function LogListPage() {
           <EmptyState title="条件に合うリピート回がありません" />
         )
       ) : (
-        <div className="card-list">
-          {logs.map((l) => (
-            <LogCard key={l.id} log={l} />
+        <>
+          <div className="sort-bar" role="group" aria-label="並び順">
+            {SORTS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                className={`sort-chip ${sort === s.key ? 'is-selected' : ''}`}
+                aria-pressed={sort === s.key}
+                onClick={() => setSort(s.key)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {groups.map((g) => (
+            <section key={g.key} className="log-group">
+              {g.title && (
+                <h2 className="group-title">
+                  <Link to={`/programs/${g.key}`}>{g.title}</Link>
+                  {g.sub && <span className="station-badge">{g.sub}</span>}
+                  <span className="group-count">{g.logs.length} 回</span>
+                </h2>
+              )}
+              <div className="card-list">
+                {g.logs.map((l) => (
+                  <LogCard key={l.id} log={l} hideProgram={sort === 'program'} />
+                ))}
+              </div>
+            </section>
           ))}
-        </div>
+        </>
       )}
 
       <div className="fab-spacer" aria-hidden="true" />

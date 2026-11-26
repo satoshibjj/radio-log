@@ -11,3 +11,6 @@ radio-log-backup-*.json
 radio-log-backup-*.txt
 # 生成物（scripts/generate-icons.mjs で作成）
 public/icons/*.png
+# E2E
+test-results/
+playwright-report/

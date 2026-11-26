@@ -26,6 +26,7 @@ npm install
 npm run dev      # http://localhost:5173/radio-log/
 npm run build    # 型チェック + 本番ビルド（dist/）
 npm run preview  # ビルド結果の確認（Service Worker も動作）
+npm run test:e2e # E2E テスト（Playwright。初回は npx playwright install chromium）
 ```
 
 ## 技術構成

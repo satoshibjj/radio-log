@@ -188,7 +188,7 @@ export function DataPage() {
       <section className="card section-card">
         <h2 className="section-title small">保存について</h2>
         <p className="muted">
-          データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除や機種変更で消えるため、ときどきバックアップしてください（14日たつとリピート帳でお知らせします）。ホーム画面に追加して使うと、Safari の履歴削除の影響を受けにくくなります。
+          データはこの端末のブラウザ内（IndexedDB）にのみ保存され、外部へは送信されません。ブラウザのデータ削除や機種変更で消えるため、ときどきバックアップしてください（14日たつとホームでお知らせします）。ホーム画面に追加して使うと、Safari の履歴削除の影響を受けにくくなります。
         </p>
         <p className="muted">
           番組登録で番組名を入力したとき（候補表示のため）と、出演者の「Wikipediaで候補を検索」を押したときだけ、検索語が Apple（Apple Podcasts の検索）または Wikipedia に送信されます。記録したデータが送られることはありません。

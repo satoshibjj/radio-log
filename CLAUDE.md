@@ -28,10 +28,15 @@ npm install
 npm run dev        # http://localhost:5173/radio-log/ （アイコン生成→Vite）
 npm run build      # アイコン生成 → tsc --noEmit → vite build
 npm run preview
+npm run test:e2e   # E2E テスト（build 済みの dist を vite preview で配信して Playwright で検証）
 ```
+
+- E2E は `tests/e2e/*.spec.ts`。GitHub Actions でデプロイ前に実行し、失敗したらデプロイしない（レポートは Actions の Artifacts「playwright-report」）。
+- テストデータは `tests/e2e/helpers.ts` の `seed()` で IndexedDB に直接入れる（架空データのみ）。外部 API は `mockExternal()`、共有は `mockShare()` でモック。
+- 機能を足したら対応するテストも追加・更新する。
 
 ## 変更したら
 
-1. `npm run build` が通ること（または Actions が緑になること）を確認する。
+1. `npm run build` と `npm run test:e2e` が通ること（または Actions が緑になること）を確認する。
 2. 機能を足したり変えたりしたら、`docs/user-story-map.md`（状態・リリース）と `docs/system-requirements.md`（該当 FR/DR・意思決定の記録・最終更新日）を更新する。
 3. コミットメッセージは変更内容が分かる英語の一文＋日本語の箇条書きでよい。

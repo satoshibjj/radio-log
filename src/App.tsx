@@ -36,6 +36,28 @@ function DbErrorBanner() {
   );
 }
 
+/** パスが変わったら画面を作り直す（例：番組の編集 → 新規登録で入力内容を持ち越さない）。クエリ（?person= 等）の変更では作り直さない */
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <Routes location={location} key={location.pathname}>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/logs" element={<LogListPage />} />
+      <Route path="/programs" element={<ProgramListPage />} />
+      <Route path="/programs/new" element={<ProgramFormPage />} />
+      <Route path="/programs/:id" element={<ProgramDetailPage />} />
+      <Route path="/programs/:id/edit" element={<ProgramFormPage />} />
+      <Route path="/logs/new" element={<LogFormPage />} />
+      <Route path="/logs/:id" element={<LogDetailPage />} />
+      <Route path="/logs/:id/edit" element={<LogFormPage />} />
+      <Route path="/persons" element={<PersonsPage />} />
+      <Route path="/data" element={<DataPage />} />
+      <Route path="/guide" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <HashRouter>
@@ -44,21 +66,7 @@ export default function App() {
           <ScrollToTop />
           <Layout>
             <DbErrorBanner />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/logs" element={<LogListPage />} />
-              <Route path="/programs" element={<ProgramListPage />} />
-              <Route path="/programs/new" element={<ProgramFormPage />} />
-              <Route path="/programs/:id" element={<ProgramDetailPage />} />
-              <Route path="/programs/:id/edit" element={<ProgramFormPage />} />
-              <Route path="/logs/new" element={<LogFormPage />} />
-              <Route path="/logs/:id" element={<LogDetailPage />} />
-              <Route path="/logs/:id/edit" element={<LogFormPage />} />
-              <Route path="/persons" element={<PersonsPage />} />
-              <Route path="/data" element={<DataPage />} />
-              <Route path="/guide" element={<Navigate to="/" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppRoutes />
           </Layout>
         </DataProvider>
       </UiProvider>

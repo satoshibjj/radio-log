@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
@@ -7,6 +7,7 @@ import { findSameDayLogs, saveEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { compareLogsDesc, errorMessage, formatYmd, isValidYmd, todayLocal } from '../lib/util';
 import { rankFrequentPersons } from '../lib/suggest';
+import { resolvePendingPerson } from '../lib/pendingPerson';
 
 const RECENT_LIMIT = 8;
 
@@ -29,6 +30,8 @@ export function LogFormPage() {
   const [errors, setErrors] = useState<{ program?: string; date?: string }>({});
   /** ユーザーが出演者を手で編集したか（番組切替時に上書きしてよいかの判定） */
   const personsTouched = useRef(false);
+  /** 出演者欄に入力されたまま確定していない名前（保存時に出演者として追加する） */
+  const pendingPerson = useRef('');
   const initialized = useRef(false);
 
   const defaultsOf = (pid: string): PersonItem[] =>
@@ -104,6 +107,10 @@ export function LogFormPage() {
     [data.programs],
   );
 
+  const setPendingPerson = useCallback((text: string) => {
+    pendingPerson.current = text;
+  }, []);
+
   const changeProgram = (pid: string) => {
     setProgramId(pid);
     setErrors((e) => ({ ...e, program: undefined }));
@@ -175,9 +182,18 @@ export function LogFormPage() {
           }
         }
       }
-      const saved = await saveEpisodeLog({ id, programId, broadcastDate: date, memo, appearances: items });
+      // 候補を選ばずに入力欄に残っている名前も出演者に含める
+      let finalItems = items;
+      const pending = await resolvePendingPerson(pendingPerson.current, data.persons);
+      if (pending && !finalItems.some((x) => x.personId === pending.personId)) {
+        finalItems = [...finalItems, { personId: pending.personId, role: 'guest' }];
+        setItems(finalItems);
+      }
+      const saved = await saveEpisodeLog({ id, programId, broadcastDate: date, memo, appearances: finalItems });
       await reload();
-      toast(isEdit ? 'リピート回を更新しました' : 'リピート回を記録しました');
+      toast(
+        `${isEdit ? 'リピート回を更新しました' : 'リピート回を記録しました'}${pending && finalItems !== items ? `（出演者に「${pending.name}」を追加）` : ''}`,
+      );
       navigate(`/logs/${saved.id}`, { replace: true });
     } catch (err) {
       setSaving(false);
@@ -293,6 +309,7 @@ export function LogFormPage() {
             showRole
             addRole="guest"
             suggestedIds={frequentIds}
+            onPendingTextChange={setPendingPerson}
             onChange={(next) => {
               personsTouched.current = true;
               setItems(next);

@@ -17,10 +17,12 @@ interface Props {
   pickerLabel?: string;
   /** 「よく出る人」候補（personId、上位から） */
   suggestedIds?: string[];
+  /** 出演者欄に入力中（未確定）の文字 */
+  onPendingTextChange?: (text: string) => void;
 }
 
 /** 人物リストの編集（追加・削除・並び替え・役割切り替え） */
-export function PersonListEditor({ items, onChange, showRole = false, addRole = 'guest', pickerLabel, suggestedIds = [] }: Props) {
+export function PersonListEditor({ items, onChange, showRole = false, addRole = 'guest', pickerLabel, suggestedIds = [], onPendingTextChange }: Props) {
   const { personById } = useData();
 
   const move = (i: number, d: -1 | 1) => {
@@ -83,6 +85,7 @@ export function PersonListEditor({ items, onChange, showRole = false, addRole = 
         label={pickerLabel}
         allowCreate
         excludeIds={items.map((x) => x.personId)}
+        onTextChange={onPendingTextChange}
         placeholder="名前・別名で検索／新規追加"
         onPick={(personId) => onChange([...items, { personId, role: addRole }])}
       />

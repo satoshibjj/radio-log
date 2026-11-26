@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useData } from '../state/DataContext';
 import { useUi } from './UiProvider';
 import { savePerson } from '../db/repo';
@@ -17,6 +17,8 @@ interface Props {
   label?: string;
   /** 未入力でタップした時に「よく出る人」を候補表示 */
   showFrequentOnFocus?: boolean;
+  /** 入力中の文字を親に知らせる（保存時に未確定の名前を拾うため） */
+  onTextChange?: (text: string) => void;
 }
 
 interface Match {
@@ -27,10 +29,13 @@ interface Match {
 }
 
 /** 人物を name / aliases から検索して選ぶ入力（サジェスト付き） */
-export function PersonPicker({ excludeIds, onPick, allowCreate = false, placeholder, label, showFrequentOnFocus = false }: Props) {
+export function PersonPicker({ excludeIds, onPick, allowCreate = false, placeholder, label, showFrequentOnFocus = false, onTextChange }: Props) {
   const { data, reload } = useData();
   const { toast } = useUi();
   const [q, setQ] = useState('');
+  useEffect(() => {
+    onTextChange?.(q);
+  }, [q, onTextChange]);
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
   /** Wikipedia 候補（検索した語ごと） */

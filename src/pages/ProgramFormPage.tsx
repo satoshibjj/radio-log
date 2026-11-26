@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
@@ -10,6 +10,7 @@ import { useData } from '../state/DataContext';
 import { errorMessage } from '../lib/util';
 import { matchStation } from '../lib/stations';
 import { rankFrequentPersons } from '../lib/suggest';
+import { resolvePendingPerson } from '../lib/pendingPerson';
 
 /** S4：番組新規登録／編集 */
 export function ProgramFormPage() {
@@ -28,6 +29,11 @@ export function ProgramFormPage() {
   /** 番組名をユーザーが入力したか（入力したら候補を自動検索） */
   const [nameTyped, setNameTyped] = useState(false);
   const initialized = useRef(false);
+  /** 出演者欄に入力されたまま確定していない名前 */
+  const pendingPerson = useRef('');
+  const setPendingPerson = useCallback((text: string) => {
+    pendingPerson.current = text;
+  }, []);
 
   const frequentIds = useMemo(
     () =>
@@ -70,7 +76,10 @@ export function ProgramFormPage() {
     }
     setSaving(true);
     try {
-      const p = await saveProgram({ id, name, station, defaultPersonIds: persons.map((x) => x.personId) });
+      let ids = persons.map((x) => x.personId);
+      const pending = await resolvePendingPerson(pendingPerson.current, data.persons);
+      if (pending && !ids.includes(pending.personId)) ids = [...ids, pending.personId];
+      const p = await saveProgram({ id, name, station, defaultPersonIds: ids });
       await reload();
       toast(isEdit ? '番組を更新しました' : '番組を登録しました');
       navigate(`/programs/${p.id}`, { replace: true });
@@ -155,7 +164,7 @@ export function ProgramFormPage() {
         <div className="field">
           <span className="field-label">基本パーソナリティ</span>
           <p className="field-hint">回を追加するとき、出演者として最初から入ります（いつもの出演者）。</p>
-          <PersonListEditor items={persons} onChange={setPersons} addRole="regular" suggestedIds={frequentIds} />
+          <PersonListEditor items={persons} onChange={setPersons} addRole="regular" suggestedIds={frequentIds} onPendingTextChange={setPendingPerson} />
         </div>
 
         <div className="form-actions">

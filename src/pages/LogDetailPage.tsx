@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
+import { ShareImageModal } from '../components/ShareImageModal';
 import { deleteEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage, formatYmd } from '../lib/util';
@@ -13,6 +14,9 @@ export function LogDetailPage() {
   const { data, loading, programById, personById, appearancesByLog, reload } = useData();
   const { confirm, alert, toast } = useUi();
   const [deleting, setDeleting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  // 別のログへ移動したらシェア画面を閉じる
+  useEffect(() => setSharing(false), [id]);
 
   const log = data.episodeLogs.find((l) => l.id === id);
   if (loading) return <PageHeader title="読み込み中…" back />;
@@ -101,13 +105,28 @@ export function LogDetailPage() {
       </article>
 
       <div className="form-actions">
-        <Link to={`/logs/${log.id}/edit`} className="btn btn-primary btn-block btn-large">
+        <button type="button" className="btn btn-primary btn-block btn-large" onClick={() => setSharing(true)}>
+          シェア画像を作成
+        </button>
+        <Link to={`/logs/${log.id}/edit`} className="btn btn-block">
           編集する
         </Link>
         <button type="button" className="btn btn-danger-outline btn-block" onClick={() => void onDelete()} disabled={deleting}>
           削除する
         </button>
       </div>
+      {sharing && (
+        <ShareImageModal
+          onClose={() => setSharing(false)}
+          data={{
+            programName: program?.name ?? '（不明な番組）',
+            station: program?.station ?? '',
+            broadcastDate: log.broadcastDate,
+            memo: log.memo,
+            cast: apps.map((a) => ({ name: personById.get(a.personId)?.name ?? '?', role: a.role })),
+          }}
+        />
+      )}
     </>
   );
 }

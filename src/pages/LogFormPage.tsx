@@ -132,7 +132,7 @@ export function LogFormPage() {
   if (!loading && data.programs.length === 0) {
     return (
       <>
-        <PageHeader title="リピート回を記録" kicker="NEW REPEAT" back />
+        <PageHeader title="また聴きたい回を追加" kicker="NEW REPEAT" back />
         <EmptyState title="先に番組を登録してください">
           <Link to="/programs/new" className="btn btn-primary">
             番組を登録
@@ -189,7 +189,7 @@ export function LogFormPage() {
 
   return (
     <>
-      <PageHeader title={isEdit ? 'リピート回を編集' : 'リピート回を記録'} kicker={isEdit ? 'EDIT REPEAT' : 'NEW REPEAT'} back />
+      <PageHeader title={isEdit ? 'リピート回を編集' : 'また聴きたい回を追加'} kicker={isEdit ? 'EDIT REPEAT' : 'NEW REPEAT'} back />
       <form className="form" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label className="field-label" htmlFor="lprogram">
@@ -316,7 +316,7 @@ export function LogFormPage() {
 
         <div className="form-actions sticky-bottom">
           <button type="submit" className="btn btn-primary btn-block btn-large" disabled={saving}>
-            {saving ? '保存中…' : isEdit ? '更新する' : '記録する'}
+            {saving ? '保存中…' : isEdit ? '更新する' : 'リピート帳に追加'}
           </button>
         </div>
       </form>

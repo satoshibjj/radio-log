@@ -81,8 +81,9 @@ export function PersonsPage() {
   return (
     <>
       <PageHeader
-        title="人物"
+        title="出演者"
         kicker="PERSONALITIES"
+        description="パーソナリティ・ゲストの名簿です。回を追加するときに入力した人も自動でここに入ります。"
         actions={
           <button type="button" className="btn btn-small btn-primary" onClick={() => setEditing('new')}>
             ＋ 新規
@@ -114,8 +115,8 @@ export function PersonsPage() {
       )}
 
       {!loading && persons.length === 0 ? (
-        <EmptyState title={data.persons.length === 0 ? '人物が登録されていません' : '該当する人物がいません'}>
-          {data.persons.length === 0 && <p>番組登録や記録の画面からも追加できます。</p>}
+        <EmptyState title={data.persons.length === 0 ? '出演者が登録されていません' : '該当する出演者がいません'}>
+          {data.persons.length === 0 && <p>番組の登録や回の追加の画面からも追加できます。</p>}
         </EmptyState>
       ) : (
         <div className="card-list">

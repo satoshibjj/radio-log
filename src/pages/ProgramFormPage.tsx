@@ -148,7 +148,7 @@ export function ProgramFormPage() {
         </div>
         <div className="field">
           <span className="field-label">基本パーソナリティ</span>
-          <p className="field-hint">リピート回の記録時に出演者として自動でセットされます。</p>
+          <p className="field-hint">回を追加するとき、出演者として最初から入ります（いつもの出演者）。</p>
           <PersonListEditor items={persons} onChange={setPersons} addRole="regular" suggestedIds={frequentIds} />
         </div>
 

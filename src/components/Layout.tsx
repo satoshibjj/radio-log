@@ -27,25 +27,25 @@ export function Layout({ children }: { children: ReactNode }) {
       <nav className="bottom-nav" aria-label="メインナビゲーション">
         <NavLink to="/" end className="nav-item">
           <Icon d={ICONS.logs} />
-          <span>リピート</span>
+          <span>リピート帳</span>
         </NavLink>
         <NavLink to="/programs" className="nav-item">
           <Icon d={ICONS.programs} />
           <span>番組</span>
         </NavLink>
-        <button type="button" className="nav-fab" aria-label="リピート回を記録する" onClick={() => navigate('/logs/new')}>
+        <button type="button" className="nav-fab" aria-label="また聴きたい回を追加する" onClick={() => navigate('/logs/new')}>
           <span className="nav-fab-dial" aria-hidden="true">
             ＋
           </span>
-          <span className="nav-fab-label">記録</span>
+          <span className="nav-fab-label">回を追加</span>
         </button>
         <NavLink to="/persons" className="nav-item">
           <Icon d={ICONS.persons} />
-          <span>人物</span>
+          <span>出演者</span>
         </NavLink>
         <NavLink to="/data" className="nav-item">
           <Icon d={ICONS.data} />
-          <span>データ</span>
+          <span>その他</span>
         </NavLink>
       </nav>
     </div>
@@ -58,12 +58,15 @@ interface HeaderProps {
   kicker?: string;
   back?: boolean;
   actions?: ReactNode;
+  /** タイトル下の一行説明（この画面が何か） */
+  description?: string;
 }
 
 /** 画面上部のヘッダー（ラジオのダイヤル目盛り風装飾つき） */
-export function PageHeader({ title, kicker, back, actions }: HeaderProps) {
+export function PageHeader({ title, kicker, back, actions, description }: HeaderProps) {
   const navigate = useNavigate();
   return (
+    <>
     <header className="page-header">
       <div className="page-header-row">
         {back && (
@@ -84,6 +87,8 @@ export function PageHeader({ title, kicker, back, actions }: HeaderProps) {
       </div>
       <div className="dial-scale" aria-hidden="true" />
     </header>
+    {description && <p className="page-desc">{description}</p>}
+    </>
   );
 }
 

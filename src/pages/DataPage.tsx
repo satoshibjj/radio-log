@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
 import { BackupValidationError, backupFileName, buildBackup, downloadJson, validateBackup } from '../db/backup';
@@ -122,7 +123,12 @@ export function DataPage() {
 
   return (
     <>
-      <PageHeader title="データ管理" kicker="BACKUP" />
+      <PageHeader title="その他" kicker="SETTINGS" description="使い方の確認と、データのバックアップ（保存・復元）ができます。" />
+
+      <Link to="/guide" className="card guide-link">
+        <span>📻 かんたん使い方ガイド</span>
+        <span aria-hidden="true">›</span>
+      </Link>
 
       <section className="card stats-card" aria-label="保存件数">
         <div className="stat">
@@ -140,7 +146,7 @@ export function DataPage() {
       </section>
 
       <section className="card section-card">
-        <h2 className="section-title small">エクスポート</h2>
+        <h2 className="section-title small">バックアップを保存（エクスポート）</h2>
         <p className="muted">全データをJSONファイルに保存します。機種変更やバックアップに使えます。</p>
         <button type="button" className="btn btn-primary btn-block" onClick={() => void onExport()} disabled={busy}>
           JSONをダウンロード
@@ -148,7 +154,7 @@ export function DataPage() {
       </section>
 
       <section className="card section-card">
-        <h2 className="section-title small">インポート（置き換え）</h2>
+        <h2 className="section-title small">バックアップから復元（インポート）</h2>
         <p className="muted">
           エクスポートしたJSONを読み込み、<strong>現在のデータを消去して置き換え</strong>ます。
         </p>

@@ -11,6 +11,7 @@ import { LogFormPage } from './pages/LogFormPage';
 import { LogDetailPage } from './pages/LogDetailPage';
 import { PersonsPage } from './pages/PersonsPage';
 import { DataPage } from './pages/DataPage';
+import { GuidePage } from './pages/GuidePage';
 
 /** 画面遷移時に先頭へスクロール */
 function ScrollToTop() {
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/logs/:id/edit" element={<LogFormPage />} />
               <Route path="/persons" element={<PersonsPage />} />
               <Route path="/data" element={<DataPage />} />
+              <Route path="/guide" element={<GuidePage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>

@@ -8,6 +8,8 @@
 - **サーバー不要**：データはブラウザの IndexedDB（この端末内）にのみ保存されます。外部送信はしません。
 - **オフライン対応**：ホーム画面に追加するとアプリとして起動でき、電波がなくても使えます。
 - **入力補助（任意）**：番組名は iTunes Search API、人名は Wikipedia から候補を検索できます（無料・APIキー不要）。検索ボタンを押した時だけ検索語を送信し、記録データは送信しません。放送局は主要局のチップからワンタップで選べます。
+- **見返す楽しみ**：🎲「おまかせ1本」でランダムに1回を選出、詳細画面からシェア用PNG画像（1080×1350）を作成・共有できます。
+- **使い方ガイド**：アプリ内の「？使い方」からいつでも確認できます。
 - **バックアップ**：「データ」画面から JSON エクスポート／インポート（置き換え）ができます。
 
 ## 開発
@@ -30,8 +32,9 @@ src/
   db/        types.ts（型）/ idb.ts（DB接続・トランザクション）/ repo.ts（CRUD・整合性）/ backup.ts（JSON入出力）
   state/     DataContext.tsx（全データのスナップショットと再読込）
   components/ Layout, PersonPicker, PersonListEditor, LogCard, UiProvider（確認ダイアログ・トースト）, UpdateBanner
-  pages/     S1 LogListPage / S2 ProgramListPage / S3 ProgramDetailPage / S4 ProgramFormPage
-             S5 LogFormPage / S6 LogDetailPage / S7 DataPage / 人物管理 PersonsPage
+  pages/     S1 LogListPage（リピート帳）/ S2 ProgramListPage / S3 ProgramDetailPage / S4 ProgramFormPage
+             S5 LogFormPage / S6 LogDetailPage / S7 DataPage（その他）/ PersonsPage（出演者）/ GuidePage
+  lib/       shareImage.ts（Canvas でシェア画像描画）/ external.ts（iTunes・Wikipedia 検索）/ suggest.ts など
 ```
 
 ### データ整合性

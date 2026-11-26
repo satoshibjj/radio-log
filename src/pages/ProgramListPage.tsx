@@ -22,6 +22,7 @@ export function ProgramListPage() {
       <PageHeader
         title="番組"
         kicker="STATIONS"
+        description="回を追加するときに選ぶ番組の一覧です（登録しただけではリピート帳に入りません）。"
         actions={
           <Link to="/programs/new" className="btn btn-small btn-primary">
             ＋ 新規

@@ -2278,11 +2278,11 @@ a.card:active {
 
 
 /* =========================================================
-   夜テーマ（v1.4.0）：夜空・紫のネオン・ミント・80年代風クーペ（ホームのみ）
+   夜テーマ（v1.4.0）— html[data-theme="night"] のときだけ効く（表示の切り替えは src/lib/theme.ts）：夜空・紫のネオン・ミント・80年代風クーペ（ホームのみ）
    仕組み：:root（ページ）を夜の配色にし、カード・入力欄・モーダル等では
    昼の配色の変数を定義し直す（中の文字は濃いまま読みやすく）。
    ========================================================= */
-:root {
+html[data-theme="night"] {
   --paper: #0f1b33; /* 夜空 */
   --paper-2: #14274a;
   --ink: #eceafb; /* ページ上の文字 */
@@ -2306,21 +2306,21 @@ a.card:active {
 }
 
 /* 紙の面（カード・入力欄・候補・モーダル等）：昼の配色に戻す */
-.card,
-.modal,
-.input,
-.suggest,
-.chip,
-.sort-chip,
-.person-row,
-.link-row,
-.select-bar,
-.backup-reminder,
-.new-program-box,
-.db-error,
-.assist-panel,
-.random-fab,
-.icon-btn.small {
+html[data-theme="night"] .card,
+html[data-theme="night"] .modal,
+html[data-theme="night"] .input,
+html[data-theme="night"] .suggest,
+html[data-theme="night"] .chip,
+html[data-theme="night"] .sort-chip,
+html[data-theme="night"] .person-row,
+html[data-theme="night"] .link-row,
+html[data-theme="night"] .select-bar,
+html[data-theme="night"] .backup-reminder,
+html[data-theme="night"] .new-program-box,
+html[data-theme="night"] .db-error,
+html[data-theme="night"] .assist-panel,
+html[data-theme="night"] .random-fab,
+html[data-theme="night"] .icon-btn.small {
   --paper: #f6f1e7;
   --paper-2: #efe7d6;
   --ink: #2b2623;
@@ -2340,141 +2340,141 @@ a.card:active {
   color-scheme: light;
 }
 
-body {
+html[data-theme="night"] body {
   /* 小さな星と、うっすら音符 */
   background-color: #0f1b33;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cg fill='%23e1f5ee'%3E%3Ccircle cx='18' cy='26' r='1.1' opacity='.7'/%3E%3Ccircle cx='92' cy='12' r='.8' opacity='.5'/%3E%3Ccircle cx='150' cy='58' r='1.2' opacity='.6'/%3E%3Ccircle cx='214' cy='30' r='.9' opacity='.55'/%3E%3Ccircle cx='60' cy='120' r='.8' opacity='.45'/%3E%3Ccircle cx='196' cy='148' r='1.1' opacity='.6'/%3E%3Ccircle cx='28' cy='206' r='.9' opacity='.5'/%3E%3Ccircle cx='120' cy='190' r='1' opacity='.55'/%3E%3C/g%3E%3Cg fill='%23afa9ec' opacity='.16' font-size='18' font-family='serif'%3E%3Ctext x='104' y='112'%3E%E2%99%AA%3C/text%3E%3Ctext x='214' y='222'%3E%E2%99%AB%3C/text%3E%3C/g%3E%3C/svg%3E");
   background-size: 240px 240px;
 }
 
-:focus-visible {
+html[data-theme="night"] :focus-visible {
   outline-color: var(--mint);
 }
 
 /* ヘッダー */
-.page-header {
+html[data-theme="night"] .page-header {
   background: rgba(15, 27, 51, 0.94);
   border-bottom: 2px solid var(--neon);
   backdrop-filter: blur(6px);
 }
 
-.dial-scale {
+html[data-theme="night"] .dial-scale {
   opacity: 0.35;
 }
 
-.dial-scale::after {
+html[data-theme="night"] .dial-scale::after {
   background: var(--mint);
   box-shadow: 0 0 6px rgba(93, 202, 165, 0.7);
 }
 
 /* ボタン：ページ上は透明＋明るい線、紙の上では濃い線（変数で自動） */
-.btn {
+html[data-theme="night"] .btn:not(.btn-danger) {
   background: transparent;
   border-color: var(--ink);
 }
 
-.btn-assist,
-.top-share-btn {
+html[data-theme="night"] .btn-assist,
+html[data-theme="night"] .top-share-btn {
   background: transparent;
   border-style: dashed;
   border-color: var(--mint-text);
   color: var(--mint-text);
 }
 
-.date-row .btn {
+html[data-theme="night"] .date-row .btn {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-.btn-primary {
+html[data-theme="night"] .btn-primary {
   background: var(--neon-deep);
   border-color: var(--neon-ink);
   color: #fff;
   box-shadow: 0 2px 0 var(--neon-ink);
 }
 
-.btn-danger-outline {
+html[data-theme="night"] .btn-danger-outline {
   color: var(--danger);
   border-color: var(--danger);
 }
 
-.req {
+html[data-theme="night"] .req {
   background: var(--neon-deep);
   color: #fff;
 }
 
-.field-error {
+html[data-theme="night"] .field-error {
   color: var(--danger);
 }
 
-.field-warn,
-.share-list-warn {
+html[data-theme="night"] .field-warn,
+html[data-theme="night"] .share-list-warn {
   color: var(--warn);
 }
 
-.assist-note {
+html[data-theme="night"] .assist-note {
   color: var(--note);
 }
 
-.select-hint {
+html[data-theme="night"] .select-hint {
   color: var(--rust);
 }
 
 /* 下部ナビ */
-.bottom-nav {
+html[data-theme="night"] .bottom-nav {
   background: #0a1326;
   border-top: 2px solid var(--neon);
   color: #d3d1c7;
 }
 
-.nav-item {
+html[data-theme="night"] .nav-item {
   color: #b4b2c9;
 }
 
-.nav-item.active {
+html[data-theme="night"] .nav-item.active {
   color: var(--mint);
 }
 
-.nav-item.active svg {
+html[data-theme="night"] .nav-item.active svg {
   filter: drop-shadow(0 0 4px rgba(93, 202, 165, 0.6));
 }
 
-.nav-fab {
+html[data-theme="night"] .nav-fab {
   color: #d3d1c7;
 }
 
-.nav-fab-dial {
+html[data-theme="night"] .nav-fab-dial {
   background: radial-gradient(circle at 35% 30%, #8f87e6 0%, var(--neon-deep) 55%, var(--neon-ink) 100%);
   border-color: #eeedfe;
   box-shadow: 0 3px 0 #26215c, 0 0 14px rgba(127, 119, 221, 0.45);
 }
 
-.nav-fab:active .nav-fab-dial {
+html[data-theme="night"] .nav-fab:active .nav-fab-dial {
   box-shadow: 0 1px 0 #26215c;
 }
 
 /* 選択中のチップ：紫 */
-.chip.is-selected,
-.sort-chip.is-selected {
+html[data-theme="night"] .chip.is-selected,
+html[data-theme="night"] .sort-chip.is-selected {
   background: var(--neon-deep);
   border-color: var(--neon-ink);
   color: #fff;
 }
 
 /* トースト */
-.toast {
+html[data-theme="night"] .toast {
   background: #eeedfe;
   color: #26215c;
 }
 
 /* ホーム：ネオン看板風のタイトル・月・80年代風クーペ */
-.home-hero {
+html[data-theme="night"] .home-hero {
   position: relative;
   background: transparent;
   border-bottom: none;
 }
 
-.home-hero::before {
+html[data-theme="night"] .home-hero::before {
   /* 三日月 */
   content: '';
   position: absolute;
@@ -2488,28 +2488,28 @@ body {
   pointer-events: none;
 }
 
-.home-hero-kicker {
+html[data-theme="night"] .home-hero-kicker {
   color: var(--mint);
 }
 
-.home-title {
+html[data-theme="night"] .home-title {
   font-family: Georgia, 'Times New Roman', 'Hiragino Mincho ProN', serif;
   font-style: italic;
   color: #afa9ec;
   text-shadow: 0 0 10px rgba(127, 119, 221, 0.55);
 }
 
-.home-tagline strong {
+html[data-theme="night"] .home-tagline strong {
   color: #cecbf6;
 }
 
-.home-random {
+html[data-theme="night"] .home-random {
   background: transparent;
   border: 2px solid var(--mint);
   color: #9fe1cb;
 }
 
-.card.home-stats {
+html[data-theme="night"] .card.home-stats {
   --ink: #eceafb;
   --ink-soft: #c9c5ee;
   --ink-mute: #9a96c8;
@@ -2518,33 +2518,70 @@ body {
   color: var(--ink);
 }
 
-.home-stats .stat-num {
+html[data-theme="night"] .home-stats .stat-num {
   color: #cecbf6;
 }
 
-.home-stats .stat-label {
+html[data-theme="night"] .home-stats .stat-label {
   color: #9fe1cb;
 }
 
-.home-night-road {
+html[data-theme="night"] .home-night-road {
   margin: 28px -16px 0;
   line-height: 0;
   pointer-events: none;
 }
 
-.home-night-road svg {
+html[data-theme="night"] .home-night-road svg {
   display: block;
   width: 100%;
   height: auto;
 }
 
 /* 固定ボタン下のグラデーション（夜空になじませる） */
-.sticky-bottom {
+html[data-theme="night"] .sticky-bottom {
   background: linear-gradient(to bottom, transparent, #0f1b33 30%);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-title {
+  html[data-theme="night"] .home-title {
     text-shadow: none;
   }
+}
+
+
+/* 夜道のクーペは夜テーマのときだけ */
+.home-night-road {
+  display: none;
+}
+
+html[data-theme="night"] .home-night-road {
+  display: block;
+}
+
+/* 見た目の切り替え（夜／昼） */
+.home-hero {
+  position: relative;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 10px;
+  width: var(--tap);
+  height: var(--tap);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.theme-toggle:active {
+  transform: scale(0.94);
+}
+
+.chip-sub {
+  font-size: 11px;
+  opacity: 0.8;
 }

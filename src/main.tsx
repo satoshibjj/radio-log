@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
+import { initTheme } from './lib/theme';
+
+initTheme();
 
 /** ストレージ永続化をリクエスト（対応ブラウザのみ・失敗しても無視） */
 function requestPersistentStorage(): void {

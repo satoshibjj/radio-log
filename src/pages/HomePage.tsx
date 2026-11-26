@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BackupReminder } from '../components/BackupReminder';
 import { GuideContent } from '../components/GuideContent';
+import { ThemeToggleButton } from '../components/ThemePicker';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useData } from '../state/DataContext';
 import { getLastBackupAt, shareBackup } from '../lib/backupActions';
@@ -47,6 +48,7 @@ export function HomePage() {
   return (
     <>
       <header className="home-hero">
+        <ThemeToggleButton />
         <div className="home-hero-kicker">AM · FM · PODCAST · YOUTUBE</div>
         <h1 className="home-title">Radio Log</h1>
         <p className="home-tagline">

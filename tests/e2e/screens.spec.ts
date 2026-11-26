@@ -69,4 +69,14 @@ test('スクリーンショット（主要画面）', async ({ page, context }) 
   await shot('12-data');
   await open(page, '/shared/hello');
   await shot('13-shared-error');
+
+  // 昼（ライト）
+  await page.evaluate(() => localStorage.setItem('radiolog.theme', 'day'));
+  await open(page, '/');
+  await page.reload();
+  await shot('20-day-home');
+  await open(page, '/logs');
+  await shot('21-day-logs');
+  await open(page, '/logs/l1');
+  await shot('22-day-detail');
 });

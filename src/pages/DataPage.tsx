@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
+import { ThemePicker } from '../components/ThemePicker';
 import { useUi } from '../components/UiProvider';
 import { appUrl, BackupValidationError, validateBackup } from '../db/backup';
 import { replaceAllData } from '../db/repo';
@@ -201,6 +202,12 @@ export function DataPage() {
         <button type="button" className="btn btn-danger-outline btn-block" onClick={() => fileRef.current?.click()} disabled={busy}>
           バックアップファイルを選択
         </button>
+      </section>
+
+      <section className="card section-card">
+        <h2 className="section-title small">見た目</h2>
+        <p className="muted">夜（ダーク）と昼（ライト）を選べます。ホームの右上の ☀️／🌙 でも切り替えられます。</p>
+        <ThemePicker />
       </section>
 
       <section className="card section-card">

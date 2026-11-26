@@ -2,7 +2,7 @@
   "name": "radio-log",
   "private": true,
   "version": "1.0.0",
-  "description": "Radio Log - ラジオ聴取ログ管理 PWA（IndexedDBローカル保存）",
+  "description": "Radio Log - リピートしたいラジオ回ログ PWA（IndexedDBローカル保存）",
   "type": "module",
   "scripts": {
     "icons": "node scripts/generate-icons.mjs",

@@ -6,7 +6,7 @@ import type { EpisodeAppearance, EpisodeLog, Person, Program } from './types';
 
 export const DB_NAME = 'radio_log_db';
 /** スキーマを変更したら上げる（upgrade に移行処理を追加すること） */
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export interface StoreMap {
   programs: Program;
@@ -28,7 +28,7 @@ export const IDX = {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function upgrade(db: IDBDatabase, oldVersion: number): void {
+function upgrade(db: IDBDatabase, oldVersion: number, tx: IDBTransaction | null): void {
   // v0 -> v1：初期スキーマ
   if (oldVersion < 1) {
     db.createObjectStore('programs', { keyPath: 'id' });
@@ -43,7 +43,18 @@ function upgrade(db: IDBDatabase, oldVersion: number): void {
     apps.createIndex(IDX.appearancesByLog, 'episodeLogId');
     apps.createIndex(IDX.appearancesByPerson, 'personId');
   }
-  // 将来: if (oldVersion < 2) { ... }
+  // v1 -> v2：回にリンク（links）を追加。既存の回は links: [] にする（放送日の空文字＝日付なしも許可）
+  if (oldVersion >= 1 && oldVersion < 2 && tx) {
+    const cursorReq = tx.objectStore('episodeLogs').openCursor();
+    cursorReq.onsuccess = () => {
+      const cursor = cursorReq.result;
+      if (!cursor) return;
+      const rec = cursor.value as Partial<EpisodeLog>;
+      if (!Array.isArray(rec.links)) cursor.update({ ...rec, links: [] });
+      cursor.continue();
+    };
+  }
+  // 将来: if (oldVersion < 3) { ... }
 }
 
 export function openDb(): Promise<IDBDatabase> {
@@ -54,7 +65,7 @@ export function openDb(): Promise<IDBDatabase> {
       return;
     }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (ev) => upgrade(req.result, ev.oldVersion);
+    req.onupgradeneeded = (ev) => upgrade(req.result, ev.oldVersion, req.transaction);
     req.onsuccess = () => {
       const db = req.result;
       // 別タブで新バージョンが開かれたら閉じて再接続に備える

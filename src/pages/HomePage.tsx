@@ -54,11 +54,12 @@ export function HomePage() {
   return (
     <>
       <header className="home-hero">
-        <div className="home-hero-kicker">AM · FM · PODCAST</div>
+        <div className="home-hero-kicker">AM · FM · PODCAST · YOUTUBE</div>
         <h1 className="home-title">Radio Log</h1>
         <p className="home-tagline">
           ラジオの<strong>「また聴きたい回」</strong>をストックするアプリ
         </p>
+        <p className="home-tagline-sub">Podcast・YouTube・配信のアーカイブも記録できます</p>
         <div className="dial-scale home-dial" aria-hidden="true" />
       </header>
 

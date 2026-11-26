@@ -17,12 +17,22 @@ export interface Person {
   updatedAt: string;
 }
 
+/** 聴ける・見られる場所のリンク（スキーマ v2） */
+export interface EpisodeLink {
+  /** http: / https: のみ */
+  url: string;
+  /** 表示名（任意。空ならサービス名を表示） */
+  label?: string;
+}
+
 export interface EpisodeLog {
   id: string;
   programId: string;
-  /** YYYY-MM-DD */
+  /** YYYY-MM-DD。空文字は「日付なし」（スキーマ v2 から） */
   broadcastDate: string;
   memo: string;
+  /** 聴ける・見られる場所（スキーマ v2 から。v1 のデータは移行で []） */
+  links: EpisodeLink[];
   createdAt: string;
   updatedAt: string;
 }
@@ -54,8 +64,10 @@ export interface AppearanceInput {
 export interface EpisodeLogInput {
   id?: string;
   programId: string;
+  /** 空文字なら日付なし */
   broadcastDate: string;
   memo: string;
+  links: EpisodeLink[];
   appearances: AppearanceInput[];
 }
 

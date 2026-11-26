@@ -22,14 +22,14 @@ const dates = (page: import('@playwright/test').Page) =>
 
 test('並び替え4種・番組ごとの見出し・選択の保持', async ({ page }) => {
   await seed(page, DATA);
-  expect(await dates(page)).toEqual(['2026-11-20', '2026-11-15', '2026-11-10', '2026-11-01']);
+  await expect.poll(() => dates(page)).toEqual(['2026-11-20', '2026-11-15', '2026-11-10', '2026-11-01']);
   await page.getByRole('button', { name: '古い順' }).click();
-  expect(await dates(page)).toEqual(['2026-11-01', '2026-11-10', '2026-11-15', '2026-11-20']);
+  await expect.poll(() => dates(page)).toEqual(['2026-11-01', '2026-11-10', '2026-11-15', '2026-11-20']);
   await page.getByRole('button', { name: '追加した順' }).click();
-  expect(await dates(page)).toEqual(['2026-11-10', '2026-11-20', '2026-11-15', '2026-11-01']);
+  await expect.poll(() => dates(page)).toEqual(['2026-11-10', '2026-11-20', '2026-11-15', '2026-11-01']);
   await page.getByRole('button', { name: '番組ごと' }).click();
   await expect(page.locator('.group-title a')).toHaveText(['あ行の架空番組', 'わ行の架空番組']);
-  expect(await dates(page)).toEqual(['2026-11-15', '2026-11-10', '2026-11-20', '2026-11-01']);
+  await expect.poll(() => dates(page)).toEqual(['2026-11-15', '2026-11-10', '2026-11-20', '2026-11-01']);
   await open(page, '/programs');
   await open(page, '/logs');
   await expect(page.locator('.sort-chip.is-selected')).toHaveText('番組ごと');

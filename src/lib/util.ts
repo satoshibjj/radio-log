@@ -40,6 +40,18 @@ export function isValidYmd(s: unknown): s is string {
   return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
 }
 
+/** 回の放送日として正しいか（空文字＝日付なし も可） */
+export function isValidLogDate(s: unknown): s is string {
+  return s === '' || isValidYmd(s);
+}
+
+export const NO_DATE_LABEL = '日付なし';
+
+/** 回の放送日の表示（日付なしなら「日付なし」） */
+export function formatLogDate(s: string): string {
+  return s ? formatYmd(s) : NO_DATE_LABEL;
+}
+
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
 /** 2026-11-26 → 2026.11.26 (木) */
@@ -110,12 +122,30 @@ export function errorMessage(err: unknown): string {
   return '不明なエラーが発生しました。';
 }
 
-/** 決定的な降順比較（放送日 → 作成日時 → id） */
-export function compareLogsDesc(
-  a: { broadcastDate: string; createdAt: string; id: string },
-  b: { broadcastDate: string; createdAt: string; id: string },
-): number {
-  if (a.broadcastDate !== b.broadcastDate) return a.broadcastDate < b.broadcastDate ? 1 : -1;
+type SortableLog = { broadcastDate: string; createdAt: string; id: string };
+
+/** 追加した順（新しく追加したものが先） */
+export function compareLogsAdded(a: SortableLog, b: SortableLog): number {
   if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+}
+
+/**
+ * 決定的な放送日順の比較（放送日 → 作成日時 → id）。既定は新しい順。
+ * 日付なしの回は、新しい順・古い順のどちらでも最後にまとめ、追加した順（新しく追加したものが先）に並べる。
+ */
+export function compareLogsByDate(a: SortableLog, b: SortableLog, order: 'desc' | 'asc' = 'desc'): number {
+  const an = a.broadcastDate === '';
+  const bn = b.broadcastDate === '';
+  if (an !== bn) return an ? 1 : -1;
+  if (an && bn) return compareLogsAdded(a, b);
+  const dir = order === 'desc' ? 1 : -1;
+  if (a.broadcastDate !== b.broadcastDate) return (a.broadcastDate < b.broadcastDate ? 1 : -1) * dir;
+  if (a.createdAt !== b.createdAt) return (a.createdAt < b.createdAt ? 1 : -1) * dir;
+  return (a.id < b.id ? 1 : a.id > b.id ? -1 : 0) * dir;
+}
+
+/** 放送日の新しい順（日付なしは最後） */
+export function compareLogsDesc(a: SortableLog, b: SortableLog): number {
+  return compareLogsByDate(a, b, 'desc');
 }

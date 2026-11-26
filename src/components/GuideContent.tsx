@@ -11,7 +11,7 @@ export function GuideContent() {
           <div>
             <h2>番組を登録する（最初だけ）</h2>
             <p>
-              下の<strong>「番組」</strong>→「＋新規」で番組名を入れると候補が出るので選び、放送局をタップします。いつもの出演者も入れておくと、次から自動で入ります。
+              下の<strong>「番組」</strong>→「＋新規」で番組名を入れると候補が出るので選び、放送局をタップします。YouTube なら動画の URL を貼るとチャンネル名を入力でき、配信元は「YouTube」などをタップします。いつもの出演者も入れておくと、次から自動で入ります。
             </p>
             <Link to="/programs/new" className="btn btn-small">
               番組を登録する
@@ -23,7 +23,7 @@ export function GuideContent() {
           <div>
             <h2>また聴きたい回を追加する</h2>
             <p>
-              真ん中の赤い<strong>「＋ 回を追加」</strong>から、番組と放送日を選び、なぜまた聴きたいかをメモします。
+              真ん中の赤い<strong>「＋ 回を追加」</strong>から、番組と放送・配信日を選び、なぜまた聴きたいかをメモします。radiko・Spotify・YouTube などのリンクを貼っておくと、あとで1タップで開けます（日付・リンクはどちらも任意）。
             </p>
           </div>
         </li>
@@ -74,12 +74,22 @@ export function GuideContent() {
         </details>
         <details className="card">
           <summary>同じ番組の別の週を追加できる？</summary>
-          <p>できます。放送日が違えば別の回として保存されます。同じ番組・同じ放送日のときだけ確認が出ます。</p>
+          <p>できます。放送日が違えば別の回として保存されます。同じ番組・同じ放送日のときだけ確認が出ます（日付なしの回は確認しません）。</p>
+        </details>
+        <details className="card">
+          <summary>YouTube の動画や配信のアーカイブも記録できる？</summary>
+          <p>
+            できます。チャンネルを「番組」として登録し（配信元は「YouTube」など）、回を追加するときに動画の URL を貼ります。「YouTube から題名を取得」を押すと題名がリンクの表示名に入ります（押した時だけ、貼った URL を YouTube に送ります）。日付が分からなければ「日付なし」で保存でき、リピート帳の最後にまとまります。
+          </p>
+        </details>
+        <details className="card">
+          <summary>radiko のリンクが開けなくなった</summary>
+          <p>radiko のタイムフリーは放送後おおむね1週間で聴けなくなります。聴けなくなっても記録はそのまま残ります。Podcast や YouTube で配信されていれば、そのリンクを追加しておくと便利です。</p>
         </details>
         <details className="card">
           <summary>データはどこに保存される？</summary>
           <p>
-            この端末のブラウザの中だけです。外部には送られません。機種変更やブラウザのデータ削除に備えて、ときどきホームの<strong>「データのバックアップ」</strong>→「バックアップを送る」で、メール（自分宛て）・LINE の Keep・Google ドライブなどに保管してください。14日たつとリピート帳でお知らせします。
+            この端末のブラウザの中だけです。外部には送られません（候補検索の言葉と、題名を取得するときの YouTube の URL だけは各サービスに送られます）。機種変更やブラウザのデータ削除に備えて、ときどきホームの<strong>「データのバックアップ」</strong>→「バックアップを送る」で、メール（自分宛て）・LINE の Keep・Google ドライブなどに保管してください。14日たつとリピート帳でお知らせします。
           </p>
         </details>
         <details className="card">

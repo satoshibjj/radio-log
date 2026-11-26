@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { EpisodeLog } from '../db/types';
 import { useData } from '../state/DataContext';
-import { formatYmd } from '../lib/util';
+import { formatLogDate } from '../lib/util';
 
 interface Props {
   log: EpisodeLog;
@@ -47,8 +47,8 @@ export function RandomPickModal({ log, drawCount, scopeLabel, canReroll, onDetai
         </div>
 
         <div className="pick-card" key={`c${drawCount}`}>
-          <time className="pick-date" dateTime={log.broadcastDate}>
-            {formatYmd(log.broadcastDate)}
+          <time className="pick-date" dateTime={log.broadcastDate || undefined}>
+            {formatLogDate(log.broadcastDate)}
           </time>
           <h2 id="pick-title" className="pick-program">
             {program?.name ?? '（不明な番組）'}

@@ -2,10 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
+import { LinkListEditor } from '../components/LinkListEditor';
 import { useUi } from '../components/UiProvider';
 import { findSameDayLogs, saveEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
-import { compareLogsDesc, errorMessage, formatYmd, isValidYmd, todayLocal } from '../lib/util';
+import { compareLogsDesc, errorMessage, formatLogDate, formatYmd, isValidLogDate, normalizeForSearch, todayLocal } from '../lib/util';
+import { linksOf } from '../lib/links';
+import type { YouTubeInfo } from '../lib/external';
+import type { EpisodeLink } from '../db/types';
 import { rankFrequentPersons } from '../lib/suggest';
 import { resolvePendingPerson } from '../lib/pendingPerson';
 
@@ -26,6 +30,7 @@ export function LogFormPage() {
   const [date, setDate] = useState(todayLocal());
   const [items, setItems] = useState<PersonItem[]>([]);
   const [memo, setMemo] = useState('');
+  const [links, setLinks] = useState<EpisodeLink[]>([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ program?: string; date?: string }>({});
   /** ユーザーが出演者を手で編集したか（番組切替時に上書きしてよいかの判定） */
@@ -45,6 +50,7 @@ export function LogFormPage() {
       setProgramId(original.programId);
       setDate(original.broadcastDate);
       setMemo(original.memo);
+      setLinks(linksOf(original));
       setItems((appearancesByLog.get(original.id) ?? []).map((a) => ({ personId: a.personId, role: a.role })));
       personsTouched.current = true; // 既存ログの出演者は保持する
     } else {
@@ -153,7 +159,7 @@ export function LogFormPage() {
     e.preventDefault();
     const errs: typeof errors = {};
     if (!programId) errs.program = '番組を選択してください';
-    if (!isValidYmd(date)) errs.date = '放送日を正しく入力してください';
+    if (!isValidLogDate(date)) errs.date = '放送・配信日を正しく入力してください（分からなければ「日付なし」）';
     setErrors(errs);
     if (errs.program || errs.date) return;
 
@@ -161,14 +167,14 @@ export function LogFormPage() {
     try {
       // 同一番組×同一放送日の重複チェック（新規作成時、または番組/放送日を変更した時）
       const keyChanged = !original || original.programId !== programId || original.broadcastDate !== date;
-      if (keyChanged) {
+      if (keyChanged && date) {
         const dups = await findSameDayLogs(programId, date, id);
         if (dups.length > 0) {
           const ok = await confirm({
             title: '同じ放送回が既に記録されています',
             message: (
               <>
-                「{programById.get(programId)?.name}」の {formatYmd(date)} 放送分は既に {dups.length} 件記録されています。
+                「{programById.get(programId)?.name}」の {formatYmd(date)} の回は既に {dups.length} 件記録されています。
                 <br />
                 このまま登録しますか？
               </>
@@ -189,7 +195,7 @@ export function LogFormPage() {
         finalItems = [...finalItems, { personId: pending.personId, role: 'guest' }];
         setItems(finalItems);
       }
-      const saved = await saveEpisodeLog({ id, programId, broadcastDate: date, memo, appearances: finalItems });
+      const saved = await saveEpisodeLog({ id, programId, broadcastDate: date, memo, links, appearances: finalItems });
       await reload();
       toast(
         `${isEdit ? 'リピート回を更新しました' : 'リピート回を記録しました'}${pending && finalItems !== items ? `（出演者に「${pending.name}」を追加）` : ''}`,
@@ -198,6 +204,19 @@ export function LogFormPage() {
     } catch (err) {
       setSaving(false);
       await alert('保存できませんでした', errorMessage(err));
+    }
+  };
+
+  /** YouTube から取得したチャンネル名と同じ名前の番組があれば、番組が未選択のとき自動で選ぶ */
+  const onYouTubeInfo = (info: YouTubeInfo) => {
+    if (programId || !info.channel) return;
+    const key = normalizeForSearch(info.channel);
+    const match = data.programs.find((p) => normalizeForSearch(p.name) === key);
+    if (match) {
+      changeProgram(match.id);
+      toast(`番組「${match.name}」を選びました`);
+    } else {
+      toast(`チャンネル「${info.channel}」は番組に未登録です（番組の登録で同じ名前にすると次から自動で選ばれます）`);
     }
   };
 
@@ -267,7 +286,7 @@ export function LogFormPage() {
 
         <div className="field">
           <label className="field-label" htmlFor="ldate">
-            放送日 <span className="req">必須</span>
+            放送・配信日 <span className="opt">任意</span>
           </label>
           <div className="date-row">
             <input
@@ -281,12 +300,42 @@ export function LogFormPage() {
               }}
             />
             {date !== todayLocal() && (
-              <button type="button" className="btn btn-small" onClick={() => setDate(todayLocal())}>
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={() => {
+                  setDate(todayLocal());
+                  setErrors((x) => ({ ...x, date: undefined }));
+                }}
+              >
                 今日
               </button>
             )}
+            {date !== '' && (
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={() => {
+                  setDate('');
+                  setErrors((x) => ({ ...x, date: undefined }));
+                }}
+              >
+                日付なし
+              </button>
+            )}
           </div>
+          {date === '' && !errors.date && (
+            <p className="field-hint date-none-hint">日付なしで保存します（YouTube の動画など、日付が分からない回）。</p>
+          )}
           {errors.date && <p className="field-error">{errors.date}</p>}
+        </div>
+
+        <div className="field">
+          <span className="field-label">
+            聴ける・見られる場所（リンク） <span className="opt">任意</span>
+          </span>
+          <p className="field-hint">radiko・Spotify・Apple Podcasts・YouTube などの URL を貼ると、詳細画面から1タップで開けます。</p>
+          <LinkListEditor links={links} onChange={setLinks} onYouTubeInfo={onYouTubeInfo} />
         </div>
 
         <div className="field">
@@ -301,7 +350,7 @@ export function LogFormPage() {
                 setItems(previousItems);
               }}
             >
-              ↺ 前回（{formatYmd(previousLog.broadcastDate)}）と同じ出演者にする
+              ↺ 前回（{formatLogDate(previousLog.broadcastDate)}）と同じ出演者にする
             </button>
           )}
           <PersonListEditor

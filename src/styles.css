@@ -1929,3 +1929,132 @@ a.card:active {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* ------------------------------------------------- リンク（聴ける・見られる場所）・日付なし（スキーマ v2） */
+.opt {
+  font-size: 10px;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0 6px;
+  margin-left: 4px;
+  vertical-align: 2px;
+  font-weight: 700;
+}
+
+.link-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.link-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+
+.link-row-top,
+.link-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-row-top .input,
+.link-row-meta .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-row-meta .station-badge {
+  flex-shrink: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input.input-small {
+  min-height: 40px;
+  font-size: 14px;
+}
+
+.link-remove {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--ink-soft);
+  background: transparent;
+}
+
+.link-add {
+  align-self: flex-start;
+}
+
+.link-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-open {
+  justify-content: space-between;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.link-open-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-open-via {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+
+.link-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+
+.date-badge.is-nodate {
+  color: var(--ink-mute);
+}
+
+.group-title.is-plain {
+  color: var(--ink-soft);
+}
+
+.station-chip-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chips-label {
+  align-self: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  margin-right: 2px;
+}
+
+.home-tagline-sub {
+  margin: -6px 0 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}

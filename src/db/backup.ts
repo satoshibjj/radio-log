@@ -1,12 +1,15 @@
 /**
  * JSON エクスポート / インポート（置き換え方式）
  */
-import type { AppearanceRole, DataSnapshot, EpisodeAppearance, EpisodeLog, Person, Program } from './types';
+import type { AppearanceRole, DataSnapshot, EpisodeAppearance, EpisodeLink, EpisodeLog, Person, Program } from './types';
 import { DB_VERSION } from './idb';
-import { isValidYmd } from '../lib/util';
+import { isValidLogDate } from '../lib/util';
+import { isSafeHttpUrl, MAX_LINK_LABEL, MAX_LINKS, MAX_URL_LENGTH } from '../lib/links';
 
 export const APP_NAME = 'radio-log';
 export const SCHEMA_VERSION = DB_VERSION;
+/** 読み込める最も古い形式。v1（リンクなし・放送日必須）のファイルもそのまま取り込める */
+export const MIN_SCHEMA_VERSION = 1;
 
 export interface BackupFile extends DataSnapshot {
   appName: string;
@@ -66,7 +69,7 @@ export function validateBackup(json: unknown): { data: DataSnapshot; meta: { exp
 
   if (json.appName !== APP_NAME) problems.push(`appName が "${APP_NAME}" ではありません。`);
   const sv = json.schemaVersion;
-  if (typeof sv !== 'number' || !Number.isInteger(sv) || sv < 1) problems.push('schemaVersion が不正です。');
+  if (typeof sv !== 'number' || !Number.isInteger(sv) || sv < MIN_SCHEMA_VERSION) problems.push('schemaVersion が不正です。');
   else if (sv > SCHEMA_VERSION) problems.push(`このアプリより新しい形式（schemaVersion ${sv}）です。アプリを更新してから再度お試しください。`);
 
   for (const key of ['programs', 'persons', 'episodeLogs', 'episodeAppearances'] as const) {
@@ -132,14 +135,31 @@ export function validateBackup(json: unknown): { data: DataSnapshot; meta: { exp
     if (!isObj(r)) return void problems.push(`episodeLogs[${i}] がオブジェクトではありません。`);
     if (!checkId('episodeLogs', i, r.id)) return;
     if (!isStr(r.programId) || !ids.programs.has(r.programId)) problems.push(`episodeLogs[${i}].programId が存在しない番組を参照しています。`);
-    if (!isValidYmd(r.broadcastDate)) problems.push(`episodeLogs[${i}].broadcastDate が YYYY-MM-DD 形式ではありません。`);
+    // v1 は日付必須・v2 から空文字（日付なし）も可
+    if (!isValidLogDate(r.broadcastDate) || (sv === 1 && r.broadcastDate === ''))
+      problems.push(`episodeLogs[${i}].broadcastDate が YYYY-MM-DD 形式ではありません。`);
     if (!isStr(r.memo)) problems.push(`episodeLogs[${i}].memo が文字列ではありません。`);
     if (!isIsoLike(r.createdAt) || !isIsoLike(r.updatedAt)) problems.push(`episodeLogs[${i}] の日時が不正です。`);
+    // links：v1 には無い（[] とみなす）。v2 は配列。
+    const links: EpisodeLink[] = [];
+    if (r.links !== undefined) {
+      if (!Array.isArray(r.links)) problems.push(`episodeLogs[${i}].links が配列ではありません。`);
+      else if (r.links.length > MAX_LINKS) problems.push(`episodeLogs[${i}].links が${MAX_LINKS}件を超えています。`);
+      else
+        r.links.forEach((l, j) => {
+          if (!isObj(l) || !isSafeHttpUrl(l.url) || (l.url as string).length > MAX_URL_LENGTH)
+            return void problems.push(`episodeLogs[${i}].links[${j}].url が http(s) の URL ではありません。`);
+          if (l.label !== undefined && (!isStr(l.label) || l.label.length > MAX_LINK_LABEL))
+            return void problems.push(`episodeLogs[${i}].links[${j}].label が不正です。`);
+          links.push(isStr(l.label) && l.label.trim() ? { url: l.url as string, label: l.label.trim() } : { url: l.url as string });
+        });
+    }
     episodeLogs.push({
       id: r.id as string,
       programId: String(r.programId),
       broadcastDate: String(r.broadcastDate),
       memo: isStr(r.memo) ? r.memo : '',
+      links,
       createdAt: String(r.createdAt),
       updatedAt: String(r.updatedAt),
     });

@@ -24,7 +24,8 @@ test('保存（ダウンロード）→ 不正ファイルは拒否 → 置き�
   const path = info.outputPath('backup.json');
   await dl.saveAs(path);
   const json = JSON.parse(readFileSync(path, 'utf8'));
-  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 1 });
+  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 2 });
+  expect(json.episodeLogs[0].links).toEqual([]);
   expect(json.episodeLogs).toHaveLength(2);
   expect(json.episodeAppearances).toHaveLength(1);
 

@@ -8,7 +8,7 @@ import { useUi } from '../components/UiProvider';
 import { ShareImageModal } from '../components/ShareImageModal';
 import { createTopImage } from '../lib/shareImage';
 import { useData } from '../state/DataContext';
-import { compareLogsDesc, todayLocal } from '../lib/util';
+import { compareLogsAdded, compareLogsByDate, NO_DATE_LABEL, todayLocal } from '../lib/util';
 import type { EpisodeLog } from '../db/types';
 
 type SortKey = 'new' | 'old' | 'program' | 'added';
@@ -70,7 +70,7 @@ export function LogListPage() {
   };
 
   const logs = useMemo(() => {
-    const sorted = [...data.episodeLogs].sort(compareLogsDesc);
+    const sorted = [...data.episodeLogs].sort((a, b) => compareLogsByDate(a, b, 'desc'));
     if (selected.length === 0) return sorted;
     // AND 検索：選択した全員が出演しているログのみ
     return sorted.filter((l) => {
@@ -80,10 +80,20 @@ export function LogListPage() {
   }, [data.episodeLogs, selected, appearancesByLog]);
 
   /** 表示用の並び（番組ごとは見出し付きグループ） */
-  const groups = useMemo<{ key: string; title?: string; sub?: string; logs: EpisodeLog[] }[]>(() => {
-    if (sort === 'old') return [{ key: 'all', logs: [...logs].reverse() }];
-    if (sort === 'added')
-      return [{ key: 'all', logs: [...logs].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0)) }];
+  const groups = useMemo<{ key: string; title?: string; sub?: string; plain?: boolean; logs: EpisodeLog[] }[]>(() => {
+    // 日付順：日付なしの回は最後に「日付なし」としてまとめる（追加した順）
+    const byDate = (order: 'desc' | 'asc') => {
+      const sorted = [...logs].sort((a, b) => compareLogsByDate(a, b, order));
+      const dated = sorted.filter((l) => l.broadcastDate !== '');
+      const undated = sorted.filter((l) => l.broadcastDate === '');
+      const out: { key: string; title?: string; plain?: boolean; logs: EpisodeLog[] }[] = [];
+      if (dated.length) out.push({ key: 'all', logs: dated });
+      if (undated.length) out.push({ key: 'nodate', title: NO_DATE_LABEL, plain: true, logs: undated });
+      return out;
+    };
+    if (sort === 'new') return byDate('desc');
+    if (sort === 'old') return byDate('asc');
+    if (sort === 'added') return [{ key: 'all', logs: [...logs].sort(compareLogsAdded) }];
     if (sort === 'program') {
       const map = new Map<string, EpisodeLog[]>();
       for (const l of logs) {
@@ -98,7 +108,7 @@ export function LogListPage() {
         })
         .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'ja'));
     }
-    return [{ key: 'all', logs }];
+    return byDate('desc');
   }, [logs, sort, programById]);
 
   /** いま画面に表示している順の上位5件 */
@@ -226,8 +236,8 @@ export function LogListPage() {
           {groups.map((g) => (
             <section key={g.key} className="log-group">
               {g.title && (
-                <h2 className="group-title">
-                  <Link to={`/programs/${g.key}`}>{g.title}</Link>
+                <h2 className={`group-title ${g.plain ? 'is-plain' : ''}`}>
+                  {g.plain ? <span>{g.title}</span> : <Link to={`/programs/${g.key}`}>{g.title}</Link>}
                   {g.sub && <span className="station-badge">{g.sub}</span>}
                   <span className="group-count">{g.logs.length} 回</span>
                 </h2>

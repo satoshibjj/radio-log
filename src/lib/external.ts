@@ -2,7 +2,8 @@
  * 外部の無料公開APIを使った入力補助（オンライン時・ユーザーがタップした時のみ呼ぶ）
  * - iTunes Search API（Apple・APIキー不要）：Podcast/番組名の検索。CORS非対応のため公式の JSONP（callback）を使用
  * - Wikipedia（ja）Action API：人名候補の検索。origin=* で匿名CORSリクエスト
- * 送信するのは検索語のみ。アプリ内のデータは送信しない。
+ * - YouTube oEmbed（APIキー不要・CORS対応）：貼った動画 URL から題名とチャンネル名を取得
+ * 送信するのは検索語（または利用者が貼った YouTube の URL）のみ。アプリ内のデータは送信しない。
  */
 
 const TIMEOUT_MS = 8000;
@@ -165,4 +166,45 @@ export async function searchWikipediaPersons(term: string): Promise<WikiPersonCa
       const { name, qualifier } = splitWikiTitle(title);
       return { title, name, qualifier, description: (p.description ?? '').trim() };
     });
+}
+
+// ---------------------------------------------------------------- YouTube oEmbed
+
+export interface YouTubeInfo {
+  /** 動画の題名 */
+  title: string;
+  /** チャンネル名 */
+  channel: string;
+}
+
+/**
+ * YouTube の oEmbed（https://www.youtube.com/oembed、APIキー不要）で題名とチャンネル名を取得する。
+ * 利用者がボタンを押した時だけ呼ぶ。送るのは貼られた URL のみ（Cookie・リファラーは送らない）。
+ */
+export async function fetchYouTubeInfo(videoUrl: string): Promise<YouTubeInfo> {
+  ensureOnline();
+  const params = new URLSearchParams({ url: videoUrl, format: 'json' });
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`https://www.youtube.com/oembed?${params.toString()}`, {
+      signal: ctrl.signal,
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+    });
+  } catch {
+    throw new ExternalSearchError('YouTube に接続できませんでした。題名は手で入力できます。');
+  } finally {
+    window.clearTimeout(timer);
+  }
+  if (res.status === 401 || res.status === 403)
+    throw new ExternalSearchError('この動画は情報を取得できません（非公開・埋め込み不可など）。手で入力してください。');
+  if (res.status === 404 || res.status === 400) throw new ExternalSearchError('動画が見つかりませんでした。URL を確認してください。');
+  if (!res.ok) throw new ExternalSearchError(`YouTube から取得できませんでした（${res.status}）。`);
+  const data = (await res.json()) as { title?: unknown; author_name?: unknown };
+  const title = typeof data.title === 'string' ? data.title.trim() : '';
+  const channel = typeof data.author_name === 'string' ? data.author_name.trim() : '';
+  if (!title && !channel) throw new ExternalSearchError('YouTube から情報を取得できませんでした。');
+  return { title, channel };
 }

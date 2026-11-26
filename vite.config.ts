@@ -19,7 +19,7 @@ export default defineConfig({
       manifest: {
         name: 'Radio Log（リピートしたいラジオ回ログ）',
         short_name: 'Radio Log',
-        description: 'また聴き返したいラジオの放送回を、出演者・聴きどころと一緒にストックする個人用アプリ',
+        description: 'また聴き返したいラジオ（Podcast・YouTube なども）の回を、出演者・聴きどころ・リンクと一緒にストックする個人用アプリ',
         lang: 'ja',
         start_url: BASE,
         scope: BASE,

@@ -12,7 +12,8 @@ import type {
   Program,
   ProgramInput,
 } from './types';
-import { cleanAliases, cleanName, isValidYmd, newId, nowIso } from '../lib/util';
+import { cleanAliases, cleanName, isValidLogDate, newId, nowIso } from '../lib/util';
+import { cleanLinks, LinkValidationError } from '../lib/links';
 
 /** ユーザーに見せる前提のエラー */
 export class AppError extends Error {
@@ -65,8 +66,9 @@ export function loadSnapshot(): Promise<DataSnapshot> {
   });
 }
 
-/** 同一番組・同一放送日のログ（excludeId は除外） */
+/** 同一番組・同一放送日のログ（excludeId は除外）。日付なしの場合は重複確認しない（常に空） */
 export function findSameDayLogs(programId: string, broadcastDate: string, excludeId?: string): Promise<EpisodeLog[]> {
+  if (!broadcastDate) return Promise.resolve([]);
   return withTx(['episodeLogs'], 'readonly', async (tx) => {
     const list = await tx.store('episodeLogs').getAllByIndex(IDX.logsByProgramDate, [programId, broadcastDate]);
     return list.filter((l) => l.id !== excludeId);
@@ -171,7 +173,13 @@ export function deletePerson(id: string): Promise<void> {
 /** episodeLogs と episodeAppearances を1トランザクションで保存 */
 export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
   if (!input.programId) return Promise.reject(new AppError('番組を選択してください。'));
-  if (!isValidYmd(input.broadcastDate)) return Promise.reject(new AppError('放送日を正しく入力してください。'));
+  if (!isValidLogDate(input.broadcastDate)) return Promise.reject(new AppError('放送・配信日を正しく入力してください。'));
+  let links: EpisodeLog['links'];
+  try {
+    links = cleanLinks(input.links);
+  } catch (err) {
+    return Promise.reject(new AppError(err instanceof LinkValidationError ? err.message : 'リンクが正しくありません。'));
+  }
 
   // 同一人物の重複は先勝ちで除外
   const seen = new Set<string>();
@@ -196,6 +204,7 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
       programId: input.programId,
       broadcastDate: input.broadcastDate,
       memo: input.memo.replace(/\s+$/, ''),
+      links,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };

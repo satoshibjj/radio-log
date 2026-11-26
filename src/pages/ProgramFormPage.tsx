@@ -9,6 +9,8 @@ import { deleteProgram, ProgramInUseError, saveProgram } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage } from '../lib/util';
 import { matchStation } from '../lib/stations';
+import { isYouTubeVideoUrl, normalizeHttpUrl } from '../lib/links';
+import { fetchYouTubeInfo } from '../lib/external';
 import { rankFrequentPersons } from '../lib/suggest';
 import { resolvePendingPerson } from '../lib/pendingPerson';
 
@@ -26,6 +28,8 @@ export function ProgramFormPage() {
   const [persons, setPersons] = useState<PersonItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [ytBusy, setYtBusy] = useState(false);
+  const [ytMessage, setYtMessage] = useState('');
   /** 番組名をユーザーが入力したか（入力したら候補を自動検索） */
   const [nameTyped, setNameTyped] = useState(false);
   const initialized = useRef(false);
@@ -68,8 +72,36 @@ export function ProgramFormPage() {
     );
   }
 
+  /** 番組名の欄に URL が貼られているか（その場合は Apple Podcasts の候補検索をしない） */
+  const nameIsUrl = /^\s*(https?:\/\/|www\.|youtu\.be\/)/i.test(name);
+  const youTubeUrl = nameIsUrl && isYouTubeVideoUrl(name) ? normalizeHttpUrl(name) : undefined;
+
+  const fillFromYouTube = async () => {
+    if (!youTubeUrl) return;
+    setYtBusy(true);
+    setYtMessage('');
+    try {
+      const info = await fetchYouTubeInfo(youTubeUrl);
+      if (!info.channel) throw new Error('チャンネル名を取得できませんでした。手で入力してください。');
+      setName(info.channel);
+      setNameError('');
+      setNameTyped(false);
+      const setSt = !station.trim();
+      if (setSt) setStation('YouTube');
+      toast(`チャンネル名${setSt ? 'と配信元（YouTube）' : ''}を入力しました`);
+    } catch (err) {
+      setYtMessage(errorMessage(err));
+    } finally {
+      setYtBusy(false);
+    }
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (nameIsUrl) {
+      setNameError('番組名に URL が入っています。チャンネル名を取得するか、名前を入力してください');
+      return;
+    }
     if (!name.trim()) {
       setNameError('番組名を入力してください');
       return;
@@ -117,7 +149,7 @@ export function ProgramFormPage() {
       <form className="form" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label className="field-label" htmlFor="pname">
-            番組名 <span className="req">必須</span>
+            番組・チャンネル名 <span className="req">必須</span>
           </label>
           <input
             id="pname"
@@ -133,9 +165,16 @@ export function ProgramFormPage() {
             aria-invalid={Boolean(nameError)}
           />
           {nameError && <p className="field-error">{nameError}</p>}
+          {youTubeUrl && (
+            <button type="button" className="btn btn-small btn-assist" disabled={ytBusy} onClick={() => void fillFromYouTube()}>
+              {ytBusy ? '取得中…' : '▶ この YouTube 動画のチャンネル名を入力'}
+            </button>
+          )}
+          {ytMessage && <p className="assist-note">{ytMessage}</p>}
+          {!name.trim() && <p className="field-hint">YouTube のチャンネルは、動画の URL を貼るとチャンネル名を取得できます。</p>}
           <ProgramNameSuggest
             value={name}
-            active={nameTyped}
+            active={nameTyped && !nameIsUrl}
             editingId={id}
             onSelect={(r) => {
               setName(r.name);
@@ -149,7 +188,7 @@ export function ProgramFormPage() {
         </div>
         <div className="field">
           <label className="field-label" htmlFor="pstation">
-            放送局
+            放送局・配信元
           </label>
           <input
             id="pstation"

@@ -6,7 +6,8 @@ import { ShareImageModal } from '../components/ShareImageModal';
 import { createShareImage, shareFileName } from '../lib/shareImage';
 import { deleteEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
-import { errorMessage, formatYmd } from '../lib/util';
+import { errorMessage, formatLogDate } from '../lib/util';
+import { detectService, linkDisplayName, linksOf } from '../lib/links';
 
 /** S6：聴取ログ詳細 */
 export function LogDetailPage() {
@@ -35,11 +36,13 @@ export function LogDetailPage() {
 
   const program = programById.get(log.programId);
   const apps = appearancesByLog.get(log.id) ?? [];
+  const links = linksOf(log);
+  const notes = Array.from(new Set(links.map((l) => detectService(l.url).note).filter((n): n is string => Boolean(n))));
 
   const onDelete = async () => {
     const ok = await confirm({
       title: 'このリピート回を削除しますか？',
-      message: `${formatYmd(log.broadcastDate)}「${program?.name ?? ''}」の記録を削除します。この操作は取り消せません。`,
+      message: `${formatLogDate(log.broadcastDate)}「${program?.name ?? ''}」の記録を削除します。この操作は取り消せません。`,
       confirmLabel: '削除する',
       danger: true,
     });
@@ -59,7 +62,7 @@ export function LogDetailPage() {
   return (
     <>
       <PageHeader
-        title={formatYmd(log.broadcastDate)}
+        title={formatLogDate(log.broadcastDate)}
         kicker="ON AIR"
         back
         actions={
@@ -79,6 +82,29 @@ export function LogDetailPage() {
           </Link>
         ) : (
           <div className="detail-program">（不明な番組）</div>
+        )}
+
+        {links.length > 0 && (
+          <>
+            <h2 className="section-title small">聴く・見る</h2>
+            <div className="link-buttons">
+              {links.map((l, i) => {
+                const name = linkDisplayName(l);
+                const via = detectService(l.url).name;
+                return (
+                  <a key={i} className="btn btn-block link-open" href={l.url} target="_blank" rel="noopener noreferrer">
+                    <span className="link-open-name">▶ {name}</span>
+                    {name !== via && <span className="link-open-via">{via}</span>}
+                  </a>
+                );
+              })}
+            </div>
+            {notes.map((n) => (
+              <p key={n} className="assist-note">
+                ※ {n}
+              </p>
+            ))}
+          </>
         )}
 
         <h2 className="section-title small">出演者</h2>
@@ -120,7 +146,7 @@ export function LogDetailPage() {
         <ShareImageModal
           onClose={() => setSharing(false)}
           fileName={shareFileName(log.broadcastDate)}
-          title={`${program?.name ?? ''} ${log.broadcastDate}`}
+          title={`${program?.name ?? ''} ${log.broadcastDate || '日付なし'}`}
           create={() =>
             createShareImage({
               programName: program?.name ?? '（不明な番組）',

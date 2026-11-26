@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../state/DataContext';
-import { PRESET_STATIONS } from '../lib/stations';
+import { isPlatform, PRESET_PLATFORMS, PRESET_STATIONS } from '../lib/stations';
 import { normalizeForSearch } from '../lib/util';
 
 const COLLAPSED_COUNT = 10;
@@ -10,7 +10,7 @@ interface Props {
   onChange: (station: string) => void;
 }
 
-/** 放送局のワンタップ選択（登録済みの局 → 主要局の順） */
+/** 放送局・配信元のワンタップ選択（1段目：登録済みの局 → 主要ラジオ局、2段目：YouTube などの配信元） */
 export function StationChips({ value, onChange }: Props) {
   const { data } = useData();
   const [expanded, setExpanded] = useState(false);
@@ -20,7 +20,7 @@ export function StationChips({ value, onChange }: Props) {
     const out: string[] = [];
     const add = (s: string) => {
       const key = normalizeForSearch(s);
-      if (!key || seen.has(key)) return;
+      if (!key || seen.has(key) || isPlatform(s)) return;
       seen.add(key);
       out.push(s);
     };
@@ -36,27 +36,35 @@ export function StationChips({ value, onChange }: Props) {
   const selectedIndex = stations.findIndex((s) => normalizeForSearch(s) === current);
   const visible = expanded ? stations : stations.slice(0, Math.max(COLLAPSED_COUNT, selectedIndex + 1));
 
+  const chip = (s: string) => {
+    const selected = normalizeForSearch(s) === current;
+    return (
+      <button
+        key={s}
+        type="button"
+        className={`chip ${selected ? 'is-selected' : ''}`}
+        aria-pressed={selected}
+        onClick={() => onChange(selected ? '' : s)}
+      >
+        {s}
+      </button>
+    );
+  };
+
   return (
-    <div className="chips station-chips" aria-label="放送局を選択">
-      {visible.map((s) => {
-        const selected = normalizeForSearch(s) === current;
-        return (
-          <button
-            key={s}
-            type="button"
-            className={`chip ${selected ? 'is-selected' : ''}`}
-            aria-pressed={selected}
-            onClick={() => onChange(selected ? '' : s)}
-          >
-            {s}
+    <div className="station-chip-groups">
+      <div className="chips station-chips" aria-label="ラジオ局を選択">
+        {visible.map(chip)}
+        {stations.length > visible.length && (
+          <button type="button" className="chip chip-clear" onClick={() => setExpanded(true)}>
+            もっと見る（{stations.length - visible.length}）
           </button>
-        );
-      })}
-      {stations.length > visible.length && (
-        <button type="button" className="chip chip-clear" onClick={() => setExpanded(true)}>
-          もっと見る（{stations.length - visible.length}）
-        </button>
-      )}
+        )}
+      </div>
+      <div className="chips station-chips platform-chips" aria-label="配信元を選択（ラジオ以外）">
+        <span className="chips-label">配信</span>
+        {PRESET_PLATFORMS.map(chip)}
+      </div>
     </div>
   );
 }

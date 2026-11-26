@@ -4,11 +4,12 @@
  * デザイン：ヴィンテージ・カセットテープのインデックスカード／ラジオ放送記録票
  */
 import type { AppearanceRole } from '../db/types';
+import { NO_DATE_LABEL } from './util';
 
 export interface ShareCardData {
   programName: string;
   station: string;
-  /** YYYY-MM-DD */
+  /** YYYY-MM-DD（空文字は日付なし） */
   broadcastDate: string;
   cast: { name: string; role: AppearanceRole }[];
   memo: string;
@@ -357,9 +358,9 @@ export function drawShareCard(canvas: HTMLCanvasElement, d: ShareCardData): void
   ctx.font = font(700, 22, DISPLAY);
   ctx.fillText('ON AIR', bx, y + 27);
   bx += ctx.measureText('ON AIR').width + 14;
-  ctx.fillStyle = C.ink;
-  ctx.font = font(700, 36, DISPLAY);
-  ctx.fillText(`${d.broadcastDate}${wd ? ` ${wd}` : ''}`, bx, y + 28);
+  ctx.fillStyle = d.broadcastDate ? C.ink : C.inkMute;
+  ctx.font = d.broadcastDate ? font(700, 36, DISPLAY) : font(800, 32);
+  ctx.fillText(shareDateText(d.broadcastDate, wd), bx, y + 28);
   ctx.textBaseline = 'alphabetic';
   y += 52 + 40;
 
@@ -465,7 +466,13 @@ export async function createShareImage(d: ShareCardData): Promise<Blob> {
 }
 
 export function shareFileName(broadcastDate: string): string {
-  return `radio-log-${broadcastDate}.png`;
+  return `radio-log-${broadcastDate || 'nodate'}.png`;
+}
+
+/** シェア画像の日付表示（日付なしの回は「日付なし」） */
+export function shareDateText(broadcastDate: string, weekday: string): string {
+  if (!broadcastDate) return NO_DATE_LABEL;
+  return `${broadcastDate}${weekday ? ` ${weekday}` : ''}`;
 }
 
 // ================================================================ リピート帳 TOP5
@@ -567,7 +574,7 @@ export function drawTopCard(canvas: HTMLCanvasElement, d: TopCardData): void {
     ctx.font = font(700, 26, DISPLAY);
     const [yy, mm, dd] = it.broadcastDate.split('-').map(Number);
     const wd = Number.isFinite(yy) ? WEEK_EN[new Date(yy, mm - 1, dd).getDay()] : '';
-    const dateText = `${it.broadcastDate}${wd ? ` ${wd}` : ''}`;
+    const dateText = shareDateText(it.broadcastDate, wd);
     ctx.fillText(dateText, textX, ly);
     if (it.station.trim()) {
       const sx = textX + ctx.measureText(dateText).width + 16;

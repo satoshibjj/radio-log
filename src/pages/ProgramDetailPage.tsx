@@ -44,7 +44,7 @@ export function ProgramDetailPage() {
       />
       <section className="card info-card">
         <dl className="info-list">
-          <dt>放送局</dt>
+          <dt>放送局・配信元</dt>
           <dd>{program.station || '—'}</dd>
           <dt>基本パーソナリティ</dt>
           <dd>

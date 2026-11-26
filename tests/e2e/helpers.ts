@@ -4,7 +4,16 @@ import type { BrowserContext, Page } from '@playwright/test';
 export interface Seed {
   persons?: { id: string; name: string; aliases?: string[] }[];
   programs?: { id: string; name: string; station?: string; defaultPersonIds?: string[] }[];
-  logs?: { id: string; programId: string; date: string; memo?: string; createdAt?: string; cast?: [string, 'regular' | 'guest'][] }[];
+  /** date は '' で「日付なし」 */
+  logs?: {
+    id: string;
+    programId: string;
+    date: string;
+    memo?: string;
+    createdAt?: string;
+    cast?: [string, 'regular' | 'guest'][];
+    links?: { url: string; label?: string }[];
+  }[];
 }
 
 /** ハッシュルートを開く（baseURL からの相対） */
@@ -33,6 +42,7 @@ export async function seed(page: Page, data: Seed, route = '/logs'): Promise<voi
               programId: l.programId,
               broadcastDate: l.date,
               memo: l.memo ?? '',
+              links: l.links ?? [],
               createdAt: c,
               updatedAt: c,
             });
@@ -72,9 +82,22 @@ export function idbCount(page: Page, store: string): Promise<number> {
   );
 }
 
-/** 外部 API（iTunes / Wikipedia）を架空の応答でモックし、呼ばれた検索語を記録する */
-export async function mockExternal(context: BrowserContext): Promise<{ itunes: string[]; wiki: { term: string; ua: string }[] }> {
-  const seen = { itunes: [] as string[], wiki: [] as { term: string; ua: string }[] };
+/** 外部 API（iTunes / Wikipedia / YouTube oEmbed）を架空の応答でモックし、呼ばれた検索語・URL を記録する */
+export async function mockExternal(
+  context: BrowserContext,
+): Promise<{ itunes: string[]; wiki: { term: string; ua: string }[]; youtube: string[] }> {
+  const seen = { itunes: [] as string[], wiki: [] as { term: string; ua: string }[], youtube: [] as string[] };
+  await context.route('https://www.youtube.com/oembed**', (route) => {
+    const u = new URL(route.request().url());
+    const target = u.searchParams.get('url') ?? '';
+    seen.youtube.push(target);
+    if (target.includes('PRIVATE')) return route.fulfill({ status: 401, headers: { 'access-control-allow-origin': '*' }, body: 'Unauthorized' });
+    return route.fulfill({
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({ title: '架空動画 第12回 アーカイブ', author_name: '架空チャンネル', type: 'video', provider_name: 'YouTube' }),
+    });
+  });
   await context.route('https://itunes.apple.com/**', (route) => {
     const u = new URL(route.request().url());
     seen.itunes.push(u.searchParams.get('term') ?? '');
@@ -155,4 +178,79 @@ export function collectErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   return errors;
+}
+
+/**
+ * 旧バージョン（スキーマ v1：links なし）のデータベースを作る。
+ * アプリの JS を読み込まない同一オリジンのファイル（favicon）を開いてから作成する。
+ */
+export async function createV1Database(page: Page, data: Required<Pick<Seed, 'programs' | 'logs'>> & Pick<Seed, 'persons'>): Promise<void> {
+  await page.goto('./favicon.svg');
+  await page.evaluate(
+    (d) =>
+      new Promise<void>((resolve, reject) => {
+        const req = indexedDB.open('radio_log_db', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          db.createObjectStore('programs', { keyPath: 'id' });
+          db.createObjectStore('persons', { keyPath: 'id' });
+          const logs = db.createObjectStore('episodeLogs', { keyPath: 'id' });
+          logs.createIndex('by_program', 'programId');
+          logs.createIndex('by_program_date', ['programId', 'broadcastDate']);
+          logs.createIndex('by_date', 'broadcastDate');
+          const apps = db.createObjectStore('episodeAppearances', { keyPath: 'id' });
+          apps.createIndex('by_log', 'episodeLogId');
+          apps.createIndex('by_person', 'personId');
+        };
+        req.onsuccess = () => {
+          const tx = req.result.transaction(['programs', 'persons', 'episodeLogs'], 'readwrite');
+          const t = '2026-01-01T00:00:00.000Z';
+          for (const p of d.persons ?? []) tx.objectStore('persons').put({ aliases: [], createdAt: t, updatedAt: t, ...p });
+          for (const p of d.programs) tx.objectStore('programs').put({ station: '', defaultPersonIds: [], createdAt: t, updatedAt: t, ...p });
+          // v1 の形（links なし）
+          for (const l of d.logs)
+            tx.objectStore('episodeLogs').put({ id: l.id, programId: l.programId, broadcastDate: l.date, memo: l.memo ?? '', createdAt: t, updatedAt: t });
+          tx.oncomplete = () => {
+            req.result.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+      }),
+    data,
+  );
+}
+
+/** IndexedDB のレコードを1件読む */
+export function idbGet<T = Record<string, unknown>>(page: Page, store: string, key: string): Promise<T | undefined> {
+  return page.evaluate(
+    ([s, k]) =>
+      new Promise<T | undefined>((resolve) => {
+        const req = indexedDB.open('radio_log_db');
+        req.onsuccess = () => {
+          const g = req.result.transaction(s).objectStore(s).get(k);
+          g.onsuccess = () => {
+            req.result.close();
+            resolve(g.result as T | undefined);
+          };
+        };
+      }),
+    [store, key] as const,
+  );
+}
+
+/** IndexedDB のバージョン */
+export function idbVersion(page: Page): Promise<number> {
+  return page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const req = indexedDB.open('radio_log_db');
+        req.onsuccess = () => {
+          const v = req.result.version;
+          req.result.close();
+          resolve(v);
+        };
+      }),
+  );
 }

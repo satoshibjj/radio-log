@@ -53,7 +53,7 @@ export function ProgramListPage() {
           onChange={setQ}
           items={suggestions}
           onPick={(id) => navigate(`/programs/${id}`)}
-          placeholder="番組名・放送局で検索"
+          placeholder="番組名・放送局・配信元で検索"
           ariaLabel="番組を検索"
           heading="候補（タップで開く）"
         />

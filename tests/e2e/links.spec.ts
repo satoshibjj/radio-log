@@ -176,7 +176,7 @@ test('配信元チップ（YouTube など）はいつも表示され、ワンタ
   await expect(page.locator('#pstation')).toHaveValue('Voicy');
 });
 
-test('v1 のデータベースは v2 に自動移行され、既存の回はそのまま使える', async ({ page }) => {
+test('v1 のデータベースは最新（v3）に自動移行され、既存の回はそのまま使える', async ({ page }) => {
   const errors = collectErrors(page);
   await createV1Database(page, {
     persons: [{ id: 'p1', name: '架空甲' }],
@@ -187,8 +187,8 @@ test('v1 のデータベースは v2 に自動移行され、既存の回はそ�
   await open(page, '/logs');
   await expect(page.locator('.log-card')).toHaveCount(1);
   await expect(page.locator('.log-card-memo')).toHaveText('v1 のころの記録');
-  expect(await idbVersion(page)).toBe(2);
-  expect(await idbGet(page, 'episodeLogs', 'old1')).toMatchObject({ broadcastDate: '2026-10-01', links: [], memo: 'v1 のころの記録' });
+  expect(await idbVersion(page)).toBe(3);
+  expect(await idbGet(page, 'episodeLogs', 'old1')).toMatchObject({ broadcastDate: '2026-10-01', links: [], tags: [], memo: 'v1 のころの記録' });
 
   // 移行後の回にリンクを足して保存できる
   await open(page, '/logs/old1/edit');
@@ -224,7 +224,7 @@ test('バックアップ：v1 形式（リンクなし）と v2 形式（リン�
   await page.getByRole('button', { name: '消去して置き換える' }).click();
   await expect(page.getByText('インポートが完了しました')).toBeVisible();
   await page.getByRole('button', { name: 'OK' }).click();
-  expect(await idbGet(page, 'episodeLogs', 'l1')).toMatchObject({ links: [] });
+  expect(await idbGet(page, 'episodeLogs', 'l1')).toMatchObject({ links: [], tags: [] });
   expect(await idbCount(page, 'programs')).toBe(1);
 
   // v1 で日付なしは不正（v2 から）
@@ -259,7 +259,7 @@ test('バックアップ：v1 形式（リンクなし）と v2 形式（リン�
   await importFile({ ...base, schemaVersion: 2, episodeLogs: [{ ...v2Logs[0], links: [{ url: 'javascript:alert(1)' }] }] }, 'bad-link.json');
   await expect(page.locator('.modal-body')).toContainText('http(s) の URL ではありません');
   await page.getByRole('button', { name: 'OK' }).click();
-  await importFile({ ...base, schemaVersion: 3, episodeLogs: v2Logs }, 'future.json');
+  await importFile({ ...base, schemaVersion: 4, episodeLogs: v2Logs }, 'future.json');
   await expect(page.locator('.modal-body')).toContainText('新しい形式');
   await page.getByRole('button', { name: 'OK' }).click();
   expect(await idbGet(page, 'episodeLogs', 'l1')).toMatchObject({ broadcastDate: '' });

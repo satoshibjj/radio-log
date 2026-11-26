@@ -24,11 +24,12 @@ test('保存（ダウンロード）→ 不正ファイルは拒否 → 置き�
   const path = info.outputPath('backup.json');
   await dl.saveAs(path);
   const json = JSON.parse(readFileSync(path, 'utf8'));
-  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 2, appUrl: expect.stringMatching(/^http:\/\/localhost:4173\/radio-log\/$/) });
+  expect(json).toMatchObject({ appName: 'radio-log', schemaVersion: 3, appUrl: expect.stringMatching(/^http:\/\/localhost:4173\/radio-log\/$/) });
   expect(json.howToRestore).toContain('バックアップファイルを選択');
   // データ画面にアプリの URL
   await expect(page.locator('.app-url')).toHaveText(json.appUrl);
   expect(json.episodeLogs[0].links).toEqual([]);
+  expect(json.episodeLogs[0].tags).toEqual([]);
   expect(json.episodeLogs).toHaveLength(2);
   expect(json.episodeAppearances).toHaveLength(1);
 

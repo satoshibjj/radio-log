@@ -14,6 +14,7 @@ import type {
 } from './types';
 import { cleanAliases, cleanName, isValidLogDate, newId, normalizeForSearch, nowIso } from '../lib/util';
 import { cleanLinks, LinkValidationError } from '../lib/links';
+import { cleanTags, TagValidationError } from '../lib/tags';
 
 /** ユーザーに見せる前提のエラー */
 export class AppError extends Error {
@@ -181,6 +182,12 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog & { c
   } catch (err) {
     return Promise.reject(new AppError(err instanceof LinkValidationError ? err.message : 'リンクが正しくありません。'));
   }
+  let tags: string[];
+  try {
+    tags = cleanTags(input.tags);
+  } catch (err) {
+    return Promise.reject(new AppError(err instanceof TagValidationError ? err.message : 'タグが正しくありません。'));
+  }
 
   // 同一人物の重複は先勝ちで除外
   const seen = new Set<string>();
@@ -226,6 +233,7 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog & { c
       broadcastDate: input.broadcastDate,
       memo: input.memo.replace(/\s+$/, ''),
       links,
+      tags,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -352,6 +360,7 @@ export async function importSharedEpisodes(inputs: SharedEpisodeInput[]): Promis
         broadcastDate: it.broadcastDate,
         memo: it.memo.replace(/\s+$/, ''),
         links: it.links,
+        tags: [],
         createdAt: now,
         updatedAt: now,
       };

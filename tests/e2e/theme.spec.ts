@@ -10,6 +10,24 @@ test('既定は夜。ホームの ☀️ で昼、もう一度で夜。選んだ
   expect(await theme(page)).toBe('night');
   await expect(page.locator('.home-night-road')).toBeVisible();
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0F1B33');
+  // 紙のカードの上の紫のボタン（今すぐ送る など）が透明にならず、白い文字が読める
+  await page.evaluate(() => {
+    const t = new Date().toISOString();
+    return new Promise<void>((resolve) => {
+      const req = indexedDB.open('radio_log_db');
+      req.onsuccess = () => {
+        const tx = req.result.transaction(['programs', 'episodeLogs'], 'readwrite');
+        tx.objectStore('programs').put({ id: 'A', name: '架空番組A', station: '', defaultPersonIds: [], createdAt: t, updatedAt: t });
+        tx.objectStore('episodeLogs').put({ id: 'l1', programId: 'A', broadcastDate: '2026-11-01', memo: '', links: [], tags: [], createdAt: t, updatedAt: t });
+        tx.oncomplete = () => resolve();
+      };
+    });
+  });
+  await page.reload();
+  const send = page.locator('.home-backup .btn-primary');
+  await expect(send).toHaveText(/今すぐ送る/);
+  expect(await send.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(83, 74, 183)');
+  expect(await send.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
 
   await page.getByRole('button', { name: '昼（ライト）の見た目にする' }).click();
   expect(await theme(page)).toBe('day');

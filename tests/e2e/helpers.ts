@@ -13,6 +13,7 @@ export interface Seed {
     createdAt?: string;
     cast?: [string, 'regular' | 'guest'][];
     links?: { url: string; label?: string }[];
+    tags?: string[];
   }[];
 }
 
@@ -43,6 +44,7 @@ export async function seed(page: Page, data: Seed, route = '/logs'): Promise<voi
               broadcastDate: l.date,
               memo: l.memo ?? '',
               links: l.links ?? [],
+              tags: l.tags ?? [],
               createdAt: c,
               updatedAt: c,
             });

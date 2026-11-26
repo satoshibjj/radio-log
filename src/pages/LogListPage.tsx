@@ -9,16 +9,18 @@ import { ShareImageModal } from '../components/ShareImageModal';
 import { ShareListModal } from '../components/ShareListModal';
 import { SHARE_MAX_ITEMS, type SharedItem } from '../lib/sharedList';
 import { linksOf } from '../lib/links';
+import { collectTags, NO_TAG_LABEL, sameTag, tagsOf } from '../lib/tags';
 import { createTopImage } from '../lib/shareImage';
 import { useData } from '../state/DataContext';
 import { compareLogsAdded, compareLogsByDate, NO_DATE_LABEL, todayLocal } from '../lib/util';
 import type { EpisodeLog } from '../db/types';
 
-type SortKey = 'new' | 'old' | 'program' | 'added';
+type SortKey = 'new' | 'old' | 'program' | 'tag' | 'added';
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'new', label: '新しい順' },
   { key: 'old', label: '古い順' },
   { key: 'program', label: '番組ごと' },
+  { key: 'tag', label: 'タグごと' },
   { key: 'added', label: '追加した順' },
 ];
 const SORT_STORAGE = 'radiolog.sort';
@@ -58,12 +60,31 @@ export function LogListPage() {
   const sortParam = params.get('sort');
   const sort: SortKey = isSortKey(sortParam) ? sortParam : loadSort();
 
-  const setSelected = (ids: string[]) => {
-    const next = new URLSearchParams();
-    ids.forEach((id) => next.append('person', id));
-    if (isSortKey(sortParam)) next.set('sort', sortParam);
+  // 番組・タグの絞り込み（ドロップダウン）：URL の ?program=ID / ?tag=名前
+  const tagList = useMemo(() => collectTags(data.episodeLogs), [data.episodeLogs]);
+  const programParam = params.get('program') ?? '';
+  const filterProgram = programById.has(programParam) ? programParam : '';
+  const tagParam = params.get('tag') ?? '';
+  const filterTag = tagParam ? (tagList.find((t) => sameTag(t.tag, tagParam))?.tag ?? '') : '';
+  /** 回が記録されている番組（名前順） */
+  const programsWithLogs = useMemo(() => {
+    const used = new Set(data.episodeLogs.map((l) => l.programId));
+    return data.programs.filter((p) => used.has(p.id)).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  }, [data.programs, data.episodeLogs]);
+
+  /** URL の条件を書き換える（他の条件は残す） */
+  const updateParams = (fn: (p: URLSearchParams) => void) => {
+    const next = new URLSearchParams(params);
+    fn(next);
     setParams(next, { replace: true });
   };
+  const setSelected = (ids: string[]) =>
+    updateParams((p) => {
+      p.delete('person');
+      ids.forEach((id) => p.append('person', id));
+    });
+  const setFilterProgram = (id: string) => updateParams((p) => (id ? p.set('program', id) : p.delete('program')));
+  const setFilterTag = (tag: string) => updateParams((p) => (tag ? p.set('tag', tag) : p.delete('tag')));
 
   const setSort = (key: SortKey) => {
     try {
@@ -77,14 +98,16 @@ export function LogListPage() {
   };
 
   const logs = useMemo(() => {
-    const sorted = [...data.episodeLogs].sort((a, b) => compareLogsByDate(a, b, 'desc'));
-    if (selected.length === 0) return sorted;
+    let list = [...data.episodeLogs].sort((a, b) => compareLogsByDate(a, b, 'desc'));
+    if (filterProgram) list = list.filter((l) => l.programId === filterProgram);
+    if (filterTag) list = list.filter((l) => tagsOf(l).some((t) => sameTag(t, filterTag)));
+    if (selected.length === 0) return list;
     // AND 検索：選択した全員が出演しているログのみ
-    return sorted.filter((l) => {
+    return list.filter((l) => {
       const ids = new Set((appearancesByLog.get(l.id) ?? []).map((a) => a.personId));
       return selected.every((id) => ids.has(id));
     });
-  }, [data.episodeLogs, selected, appearancesByLog]);
+  }, [data.episodeLogs, selected, appearancesByLog, filterProgram, filterTag]);
 
   /** 表示用の並び（番組ごとは見出し付きグループ） */
   const groups = useMemo<{ key: string; title?: string; sub?: string; plain?: boolean; logs: EpisodeLog[] }[]>(() => {
@@ -115,20 +138,38 @@ export function LogListPage() {
         })
         .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'ja'));
     }
+    if (sort === 'tag') {
+      // タグごと：タグの多い順に見出し。複数のタグがある回は各タグに出る。タグなしは最後
+      const out: { key: string; title?: string; plain?: boolean; logs: EpisodeLog[] }[] = [];
+      for (const { tag } of tagList) {
+        const list = logs.filter((l) => tagsOf(l).some((t) => sameTag(t, tag)));
+        if (list.length) out.push({ key: `tag:${tag}`, title: `#${tag}`, plain: true, logs: list });
+      }
+      const none = logs.filter((l) => tagsOf(l).length === 0);
+      if (none.length) out.push({ key: 'notag', title: NO_TAG_LABEL, plain: true, logs: none });
+      return out;
+    }
     return byDate('desc');
-  }, [logs, sort, programById]);
+  }, [logs, sort, programById, tagList]);
 
-  /** いま画面に表示している順の上位5件 */
-  const top5 = useMemo(() => groups.flatMap((g) => g.logs).slice(0, 5), [groups]);
+  /** いま画面に表示している順の上位5件（タグごとで同じ回が複数の見出しに出ても1回だけ） */
+  const top5 = useMemo(() => {
+    const seen = new Set<string>();
+    return groups.flatMap((g) => g.logs).filter((l) => (seen.has(l.id) ? false : (seen.add(l.id), true))).slice(0, 5);
+  }, [groups]);
   const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? '';
 
   const createTop = () =>
     createTopImage({
       sortLabel,
       scopeLabel:
-        selected.length > 0
-          ? `出演：${selected.map((id) => personById.get(id)?.name ?? '?').join('・')}`
-          : `全 ${logs.length} 件から`,
+        [
+          filterProgram ? `番組：${programById.get(filterProgram)?.name ?? ''}` : '',
+          filterTag ? `#${filterTag}` : '',
+          selected.length > 0 ? `出演：${selected.map((id) => personById.get(id)?.name ?? '?').join('・')}` : '',
+        ]
+          .filter(Boolean)
+          .join(' ／ ') || `全 ${logs.length} 件から`,
       items: top5.map((l) => {
         const p = programById.get(l.programId);
         return {
@@ -155,7 +196,10 @@ export function LogListPage() {
   /** 選んだ回を、画面の並び順でシェア用の形にする */
   const shareItems = useMemo<SharedItem[]>(() => {
     if (!sharingList) return [];
-    const order = groups.flatMap((g) => g.logs).filter((l) => chosen.includes(l.id));
+    const seen = new Set<string>();
+    const order = groups
+      .flatMap((g) => g.logs)
+      .filter((l) => chosen.includes(l.id) && (seen.has(l.id) ? false : (seen.add(l.id), true)));
     return order.map((l) => {
       const p = programById.get(l.programId);
       return {
@@ -172,7 +216,7 @@ export function LogListPage() {
     });
   }, [sharingList, groups, chosen, programById, appearancesByLog, personById]);
 
-  const filtered = selected.length > 0;
+  const filtered = selected.length > 0 || Boolean(filterProgram) || Boolean(filterTag);
   /** まだ1件も無い（はじめての状態） */
   const isEmpty = !loading && data.episodeLogs.length === 0;
   const scopeLabel = filtered ? `絞り込み中の ${logs.length} 件から抽選` : `全 ${logs.length} 件から抽選`;
@@ -199,7 +243,41 @@ export function LogListPage() {
         description="「また聴きたい！」と思った放送回の一覧です。"
       />
       {!isEmpty && (
-      <section className="filter-box" aria-label="出演者で絞り込み">
+      <section className="filter-box" aria-label="絞り込み">
+        <div className="filter-selects">
+          <label className="filter-select">
+            <span className="filter-select-label">番組</span>
+            <select
+              id="filter-program"
+              className={`input select ${filterProgram ? 'is-active' : ''}`}
+              value={filterProgram}
+              onChange={(e) => setFilterProgram(e.target.value)}
+            >
+              <option value="">すべての番組</option>
+              {programsWithLogs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="filter-select">
+            <span className="filter-select-label">タグ</span>
+            <select
+              id="filter-tag"
+              className={`input select ${filterTag ? 'is-active' : ''}`}
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+            >
+              <option value="">すべてのタグ</option>
+              {tagList.map((t) => (
+                <option key={t.tag} value={t.tag}>
+                  #{t.tag}（{t.count}）
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <PersonPicker
           label="出演者で絞り込み（AND）"
           showFrequentOnFocus
@@ -229,7 +307,7 @@ export function LogListPage() {
 
       {!isEmpty && (
       <div className="list-meta">
-        {loading ? '読み込み中…' : `${logs.length} 件${selected.length ? `（全 ${data.episodeLogs.length} 件中）` : ''}`}
+        {loading ? '読み込み中…' : `${logs.length} 件${filtered ? `（全 ${data.episodeLogs.length} 件中）` : ''}`}
       </div>
       )}
 

@@ -21,9 +21,10 @@ const DATA: Seed = {
       date: '2026-11-21',
       memo: '冒頭のフリートークがまた聴きたい。後半のコーナーの掛け合いも最高。',
       cast: [['p1', 'regular'], ['p2', 'guest']],
+      tags: ['神回', '企画回'],
       links: [{ url: 'https://radiko.jp/#!/ts/XXX/1' }, { url: 'https://www.youtube.com/watch?v=abcdEFGH123', label: '架空動画' }],
     },
-    { id: 'l2', programId: 'A', date: '2026-11-14', cast: [['p1', 'regular']] },
+    { id: 'l2', programId: 'A', date: '2026-11-14', cast: [['p1', 'regular']], tags: ['神回'] },
     { id: 'l3', programId: 'B', date: '', memo: '日付の分からない配信回' },
   ],
 };

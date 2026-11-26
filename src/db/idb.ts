@@ -6,7 +6,7 @@ import type { EpisodeAppearance, EpisodeLog, Person, Program } from './types';
 
 export const DB_NAME = 'radio_log_db';
 /** スキーマを変更したら上げる（upgrade に移行処理を追加すること） */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export interface StoreMap {
   programs: Program;
@@ -43,18 +43,22 @@ function upgrade(db: IDBDatabase, oldVersion: number, tx: IDBTransaction | null)
     apps.createIndex(IDX.appearancesByLog, 'episodeLogId');
     apps.createIndex(IDX.appearancesByPerson, 'personId');
   }
-  // v1 -> v2：回にリンク（links）を追加。既存の回は links: [] にする（放送日の空文字＝日付なしも許可）
-  if (oldVersion >= 1 && oldVersion < 2 && tx) {
+  // v1 -> v2：回にリンク（links）を追加（放送日の空文字＝日付なしも許可）
+  // v2 -> v3：回にタグ（tags）を追加
+  // 既存の回に足りない項目を [] で入れる。v1 から一度に上げる場合も1回の走査で両方を入れる（同じ回を2回書き換えない）
+  if (oldVersion >= 1 && oldVersion < 3 && tx) {
     const cursorReq = tx.objectStore('episodeLogs').openCursor();
     cursorReq.onsuccess = () => {
       const cursor = cursorReq.result;
       if (!cursor) return;
       const rec = cursor.value as Partial<EpisodeLog>;
-      if (!Array.isArray(rec.links)) cursor.update({ ...rec, links: [] });
+      if (!Array.isArray(rec.links) || !Array.isArray(rec.tags)) {
+        cursor.update({ ...rec, links: Array.isArray(rec.links) ? rec.links : [], tags: Array.isArray(rec.tags) ? rec.tags : [] });
+      }
       cursor.continue();
     };
   }
-  // 将来: if (oldVersion < 3) { ... }
+  // 将来: if (oldVersion < 4) { ... }
 }
 
 export function openDb(): Promise<IDBDatabase> {

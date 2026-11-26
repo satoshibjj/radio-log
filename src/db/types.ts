@@ -33,6 +33,8 @@ export interface EpisodeLog {
   memo: string;
   /** 聴ける・見られる場所（スキーマ v2 から。v1 のデータは移行で []） */
   links: EpisodeLink[];
+  /** タグ（カテゴリ。スキーマ v3 から。v1/v2 のデータは移行で []） */
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +73,7 @@ export interface EpisodeLogInput {
   broadcastDate: string;
   memo: string;
   links: EpisodeLink[];
+  tags: string[];
   appearances: AppearanceInput[];
 }
 

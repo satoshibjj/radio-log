@@ -8,6 +8,7 @@ import { deleteEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage, formatLogDate } from '../lib/util';
 import { detectService, linkDisplayName, linksOf } from '../lib/links';
+import { tagsOf } from '../lib/tags';
 
 /** S6：聴取ログ詳細 */
 export function LogDetailPage() {
@@ -104,6 +105,25 @@ export function LogDetailPage() {
                 ※ {n}
               </p>
             ))}
+          </>
+        )}
+
+        {tagsOf(log).length > 0 && (
+          <>
+            <h2 className="section-title small">タグ</h2>
+            <div className="chips">
+              {tagsOf(log).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className="chip tag-chip"
+                  title="このタグの回を表示"
+                  onClick={() => navigate(`/logs?tag=${encodeURIComponent(t)}`)}
+                >
+                  #{t}
+                </button>
+              ))}
+            </div>
           </>
         )}
 

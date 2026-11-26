@@ -3,6 +3,7 @@ import type { EpisodeLog } from '../db/types';
 import { useData } from '../state/DataContext';
 import { formatLogDate } from '../lib/util';
 import { detectService, linksOf } from '../lib/links';
+import { tagsOf } from '../lib/tags';
 
 interface Props {
   log: EpisodeLog;
@@ -39,6 +40,15 @@ export function LogCard({ log, hideProgram, selectable, selected, onToggle }: Pr
         )}
       </div>
       {!hideProgram && <div className="log-card-program">{program?.name ?? '（不明な番組）'}</div>}
+      {tagsOf(log).length > 0 && (
+        <div className="log-card-tags">
+          {tagsOf(log).map((t) => (
+            <span key={t} className="tag-mini">
+              #{t}
+            </span>
+          ))}
+        </div>
+      )}
       {apps.length > 0 && (
         <div className="log-card-persons">
           {apps.map((a) => (

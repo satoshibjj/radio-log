@@ -2368,7 +2368,8 @@ html[data-theme="night"] .dial-scale::after {
 }
 
 /* ボタン：ページ上は透明＋明るい線、紙の上では濃い線（変数で自動） */
-html[data-theme="night"] .btn:not(.btn-danger) {
+/* :where で詳細度を下げ、.btn-primary・.home-random などの個別の指定が勝つようにする */
+html[data-theme="night"] :where(.btn:not(.btn-danger)) {
   background: transparent;
   border-color: var(--ink);
 }
@@ -2584,4 +2585,78 @@ html[data-theme="night"] .home-night-road {
 .chip-sub {
   font-size: 11px;
   opacity: 0.8;
+}
+
+/* ------------------------------------------------- タグ（v1.5.0） */
+.log-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tag-mini {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eeedfe;
+  color: #3c3489;
+}
+
+.tag-chip {
+  font-weight: 700;
+}
+
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tag-input-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-input-row .btn {
+  flex-shrink: 0;
+}
+
+/* 番組・タグのドロップダウン */
+.filter-selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-select {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.filter-select-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.filter-select .select {
+  min-height: var(--tap);
+  font-size: 16px;
+  text-overflow: ellipsis;
+}
+
+.filter-select .select.is-active {
+  border-color: var(--rust);
+  box-shadow: 0 0 0 2px var(--rust);
 }

@@ -3,6 +3,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
 import { LinkListEditor } from '../components/LinkListEditor';
+import { TagEditor } from '../components/TagEditor';
+import { cleanTag, collectTags, sameTag, tagsOf } from '../lib/tags';
 import { ProgramPicker } from '../components/ProgramPicker';
 import { StationChips } from '../components/StationChips';
 import { matchStation } from '../lib/stations';
@@ -38,6 +40,9 @@ export function LogFormPage() {
   const [items, setItems] = useState<PersonItem[]>([]);
   const [memo, setMemo] = useState('');
   const [links, setLinks] = useState<EpisodeLink[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  /** タグ欄に打ったまま（追加を押していない）の文字 */
+  const pendingTag = useRef('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ program?: string; date?: string }>({});
   /** ユーザーが出演者を手で編集したか（番組切替時に上書きしてよいかの判定） */
@@ -59,6 +64,7 @@ export function LogFormPage() {
       setDate(original.broadcastDate);
       setMemo(original.memo);
       setLinks(linksOf(original));
+      setTags(tagsOf(original));
       setItems((appearancesByLog.get(original.id) ?? []).map((a) => ({ personId: a.personId, role: a.role })));
       personsTouched.current = true; // 既存ログの出演者は保持する
     } else {
@@ -73,6 +79,12 @@ export function LogFormPage() {
     initialized.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, isEdit, original]);
+
+  /** 登録済みのタグ（使われている回数の多い順） */
+  const knownTags = useMemo(() => collectTags(data.episodeLogs).map((t) => t.tag), [data.episodeLogs]);
+  const setPendingTag = useCallback((text: string) => {
+    pendingTag.current = text;
+  }, []);
 
   /** 直近に記録した番組（更新日時の新しい順） */
   const recentProgramIds = useMemo(() => {
@@ -190,6 +202,13 @@ export function LogFormPage() {
         finalItems = [...finalItems, { personId: pending.personId, role: 'guest' }];
         setItems(finalItems);
       }
+      // タグ欄に打ったままの文字もタグに入れる
+      let finalTags = tags;
+      const pt = cleanTag(pendingTag.current);
+      if (pt && !finalTags.some((t) => sameTag(t, pt))) {
+        finalTags = [...finalTags, pt];
+        setTags(finalTags);
+      }
       const saved = await saveEpisodeLog({
         id,
         programId,
@@ -197,6 +216,7 @@ export function LogFormPage() {
         broadcastDate: date,
         memo,
         links,
+        tags: finalTags,
         appearances: finalItems,
       });
       await reload();
@@ -378,6 +398,14 @@ export function LogFormPage() {
               setItems(next);
             }}
           />
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor="ltag">
+            タグ（カテゴリ） <span className="opt">任意</span>
+          </label>
+          <p className="field-hint">自由に付けられます。前に付けたタグはタップで選べます。</p>
+          <TagEditor tags={tags} onChange={setTags} known={knownTags} onPendingTextChange={setPendingTag} />
         </div>
 
         <div className="field">

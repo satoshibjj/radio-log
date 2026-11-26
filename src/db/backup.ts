@@ -5,6 +5,7 @@ import type { AppearanceRole, DataSnapshot, EpisodeAppearance, EpisodeLink, Epis
 import { DB_VERSION } from './idb';
 import { isValidLogDate } from '../lib/util';
 import { isSafeHttpUrl, MAX_LINK_LABEL, MAX_LINKS, MAX_URL_LENGTH } from '../lib/links';
+import { cleanTags } from '../lib/tags';
 
 export const APP_NAME = 'radio-log';
 export const SCHEMA_VERSION = DB_VERSION;
@@ -173,12 +174,25 @@ export function validateBackup(json: unknown): { data: DataSnapshot; meta: { exp
           links.push(isStr(l.label) && l.label.trim() ? { url: l.url as string, label: l.label.trim() } : { url: l.url as string });
         });
     }
+    // tags：v1/v2 には無い（[] とみなす）。v3 は文字列の配列（10個まで・各20文字まで）
+    let tags: string[] = [];
+    if (r.tags !== undefined) {
+      if (!isStrArray(r.tags)) problems.push(`episodeLogs[${i}].tags が文字列配列ではありません。`);
+      else {
+        try {
+          tags = cleanTags(r.tags);
+        } catch (err) {
+          problems.push(`episodeLogs[${i}].tags：${err instanceof Error ? err.message : '不正です。'}`);
+        }
+      }
+    }
     episodeLogs.push({
       id: r.id as string,
       programId: String(r.programId),
       broadcastDate: String(r.broadcastDate),
       memo: isStr(r.memo) ? r.memo : '',
       links,
+      tags,
       createdAt: String(r.createdAt),
       updatedAt: String(r.updatedAt),
     });

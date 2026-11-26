@@ -19,7 +19,7 @@ export function GuidePage() {
           <div>
             <h2>番組を登録する（最初だけ）</h2>
             <p>
-              下の<strong>「番組」</strong>→「＋新規」で番組名と放送局を入れます。いつもの出演者も入れておくと、次から自動で入ります。
+              下の<strong>「番組」</strong>→「＋新規」で番組名を入れると候補が出るので選び、放送局をタップします。いつもの出演者も入れておくと、次から自動で入ります。
             </p>
             <Link to="/programs/new" className="btn btn-small">
               番組を登録する
@@ -75,9 +75,9 @@ export function GuidePage() {
           </p>
         </details>
         <details className="card">
-          <summary>番組の検索で出てこない番組がある</summary>
+          <summary>番組名の候補に出てこない番組がある</summary>
           <p>
-            番組登録の「Podcast/番組を検索」は、<strong>Apple Podcasts にある番組だけ</strong>が候補に出ます。radiko でしか聴けない番組や、Spotify 独占配信の番組（オールナイトニッポンの一部など）は Spotify で聴けても出てこないので、番組名を手入力してください。一度登録すれば、次からは選ぶだけで済みます。
+            番組名を入力すると出る候補は、<strong>Apple Podcasts にある番組だけ</strong>が候補に出ます。radiko でしか聴けない番組や、Spotify 独占配信の番組（オールナイトニッポンの一部など）は Spotify で聴けても出てこないので、番組名を手入力してください。一度登録すれば、次からは選ぶだけで済みます。
           </p>
         </details>
         <details className="card">

@@ -1623,3 +1623,29 @@ a.card:active {
   line-height: 1.5;
   color: #6b4e05;
 }
+
+.name-suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.name-suggest .muted.small,
+.muted.small {
+  margin: 0;
+  font-size: 12px;
+}
+
+.suggest-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 6px 12px 2px;
+}
+
+.field-warn {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a5a00;
+}

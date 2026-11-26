@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
-import { PodcastSearch } from '../components/PodcastSearch';
+import { ProgramNameSuggest } from '../components/ProgramNameSuggest';
 import { StationChips } from '../components/StationChips';
 import { useUi } from '../components/UiProvider';
 import { deleteProgram, ProgramInUseError, saveProgram } from '../db/repo';
@@ -25,6 +25,8 @@ export function ProgramFormPage() {
   const [persons, setPersons] = useState<PersonItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
+  /** 番組名をユーザーが入力したか（入力したら候補を自動検索） */
+  const [nameTyped, setNameTyped] = useState(false);
   const initialized = useRef(false);
 
   const frequentIds = useMemo(
@@ -115,17 +117,21 @@ export function ProgramFormPage() {
             onChange={(e) => {
               setName(e.target.value);
               setNameError('');
+              setNameTyped(true);
             }}
-            placeholder="例：サンプル・ナイトラジオ"
+            placeholder="番組名を入力すると候補が出ます"
             autoComplete="off"
             aria-invalid={Boolean(nameError)}
           />
           {nameError && <p className="field-error">{nameError}</p>}
-          <PodcastSearch
-            initialTerm={name}
+          <ProgramNameSuggest
+            value={name}
+            active={nameTyped}
+            editingId={id}
             onSelect={(r) => {
               setName(r.name);
               setNameError('');
+              setNameTyped(false); // 選んだら候補を閉じる
               const matched = station.trim() ? undefined : matchStation(r.artist, data.programs.map((p) => p.station));
               if (matched) setStation(matched);
               toast(matched ? `番組名と放送局（${matched}）を入力しました` : '番組名を入力しました');

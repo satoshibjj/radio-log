@@ -39,7 +39,6 @@ export function HomePage() {
       toast(errorMessage(err));
     }
   };
-  const hasPrograms = data.programs.length > 0;
 
   const draw = () => {
     if (logs.length === 0) return;
@@ -66,15 +65,9 @@ export function HomePage() {
       {!loading && logs.length > 0 && <BackupReminder />}
 
       <section className="home-actions" aria-label="すぐやる操作">
-        {hasPrograms || loading ? (
-          <Link to="/logs/new" className="btn btn-primary btn-block btn-large">
-            ＋ また聴きたい回を追加
-          </Link>
-        ) : (
-          <Link to="/programs/new" className="btn btn-primary btn-block btn-large">
-            ① まず番組を登録する
-          </Link>
-        )}
+        <Link to="/logs/new" className="btn btn-primary btn-block btn-large">
+          ＋ また聴きたい回を追加
+        </Link>
         {logs.length > 0 && (
           <button type="button" className="btn btn-block home-random" onClick={draw}>
             🎲 おまかせ1本（今日聴く回を選ぶ）

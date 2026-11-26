@@ -171,8 +171,9 @@ export function deletePerson(id: string): Promise<void> {
 // ---------------------------------------------------------------- 聴取ログ
 
 /** episodeLogs と episodeAppearances を1トランザクションで保存 */
-export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
-  if (!input.programId) return Promise.reject(new AppError('番組を選択してください。'));
+export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog & { createdProgram?: Program }> {
+  const newProgramName = input.newProgram ? cleanName(input.newProgram.name) : '';
+  if (!input.programId && !newProgramName) return Promise.reject(new AppError('番組を選ぶか、番組名を入力してください。'));
   if (!isValidLogDate(input.broadcastDate)) return Promise.reject(new AppError('放送・配信日を正しく入力してください。'));
   let links: EpisodeLog['links'];
   try {
@@ -190,7 +191,27 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
   });
 
   return withTx(['episodeLogs', 'episodeAppearances', 'programs', 'persons'], 'readwrite', async (tx) => {
-    if (!(await tx.store('programs').get(input.programId))) throw new AppError('選択した番組が見つかりません。');
+    let programId = input.programId;
+    let createdProgram: Program | undefined;
+    if (!programId) {
+      // 手入力の番組：同じ名前（表記ゆれ込み）が既にあればそれを使い、なければ新しく登録
+      const key = normalizeForSearch(newProgramName);
+      const same = (await tx.store('programs').getAll()).find((p) => normalizeForSearch(p.name) === key);
+      if (same) programId = same.id;
+      else {
+        const t = nowIso();
+        createdProgram = {
+          id: newId(),
+          name: newProgramName,
+          station: cleanName(input.newProgram?.station ?? ''),
+          defaultPersonIds: [],
+          createdAt: t,
+          updatedAt: t,
+        };
+        await tx.store('programs').add(createdProgram);
+        programId = createdProgram.id;
+      }
+    } else if (!(await tx.store('programs').get(programId))) throw new AppError('選択した番組が見つかりません。');
     for (const a of appearances) {
       if (!(await tx.store('persons').get(a.personId))) throw new AppError('存在しない人物が含まれています。');
     }
@@ -201,7 +222,7 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
 
     const log: EpisodeLog = {
       id: existing?.id ?? newId(),
-      programId: input.programId,
+      programId,
       broadcastDate: input.broadcastDate,
       memo: input.memo.replace(/\s+$/, ''),
       links,
@@ -224,7 +245,7 @@ export function saveEpisodeLog(input: EpisodeLogInput): Promise<EpisodeLog> {
       };
       await appStore.add(rec);
     }
-    return log;
+    return createdProgram ? { ...log, createdProgram } : log;
   });
 }
 

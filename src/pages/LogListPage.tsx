@@ -237,8 +237,8 @@ export function LogListPage() {
         data.episodeLogs.length === 0 ? (
           <EmptyState title="まだリピート回がありません">
             <p>「また聴きたい！」と思った回を追加すると、ここに並びます。</p>
-            <Link className="btn btn-primary" to={data.programs.length === 0 ? '/programs/new' : '/logs/new'}>
-              {data.programs.length === 0 ? 'まず番組を登録する' : '＋ また聴きたい回を追加'}
+            <Link className="btn btn-primary" to="/logs/new">
+              ＋ また聴きたい回を追加
             </Link>
             <Link className="btn btn-small" to="/">
               使い方はホームへ

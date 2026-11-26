@@ -1,12 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { searchPodcasts, type PodcastResult } from '../lib/external';
+import { useMemo } from 'react';
+import type { PodcastResult } from '../lib/external';
 import { useData } from '../state/DataContext';
-import { errorMessage, normalizeForSearch } from '../lib/util';
-
-const DEBOUNCE_MS = 700;
-const MIN_CHARS = 2;
-/** 同じ語は再検索しない（API の回数制限対策） */
-const cache = new Map<string, PodcastResult[]>();
+import { normalizeForSearch } from '../lib/util';
+import { usePodcastSuggest } from './usePodcastSuggest';
 
 interface Props {
   /** 入力中の番組名 */
@@ -21,11 +17,7 @@ interface Props {
 /** 番組名の入力に合わせて Apple Podcasts の候補を自動表示（ボタン不要） */
 export function ProgramNameSuggest({ value, active, editingId, onSelect }: Props) {
   const { data } = useData();
-  const [results, setResults] = useState<PodcastResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const seq = useRef(0);
-  const term = value.trim();
+  const { term, enabled, results, loading, error } = usePodcastSuggest(value, active);
 
   /** 同名の番組が既に登録されていないか */
   const duplicate = useMemo(() => {
@@ -33,41 +25,7 @@ export function ProgramNameSuggest({ value, active, editingId, onSelect }: Props
     return n ? data.programs.find((p) => p.id !== editingId && normalizeForSearch(p.name) === n) : undefined;
   }, [data.programs, term, editingId]);
 
-  useEffect(() => {
-    setError('');
-    if (!active || term.length < MIN_CHARS) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
-    const cached = cache.get(term);
-    if (cached) {
-      setResults(cached);
-      setLoading(false);
-      return;
-    }
-    const my = ++seq.current;
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      searchPodcasts(term)
-        .then((r) => {
-          cache.set(term, r);
-          if (my === seq.current) setResults(r);
-        })
-        .catch((err) => {
-          if (my === seq.current) {
-            setResults([]);
-            setError(errorMessage(err));
-          }
-        })
-        .finally(() => {
-          if (my === seq.current) setLoading(false);
-        });
-    }, DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [term, active]);
-
-  if (!active || term.length < MIN_CHARS) return null;
+  if (!enabled) return null;
 
   // 入力と完全に同じ名前の候補だけなら出さない（選択済み）
   const shown = results.filter((r) => normalizeForSearch(r.name) !== normalizeForSearch(term));

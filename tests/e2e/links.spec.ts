@@ -157,7 +157,8 @@ test('YouTube：動画 URL からチャンネル名と配信元を入力（Podca
   await page.getByLabel('リンク1の URL').fill('https://www.youtube.com/live/abcdEFGH123');
   await page.getByRole('button', { name: '▶ YouTube から題名を取得' }).click();
   await expect(page.getByText('番組「架空チャンネル」を選びました')).toBeVisible();
-  await expect(page.locator('#lprogram option:checked')).toContainText('架空チャンネル');
+  await expect(page.locator('#lprogram')).toHaveValue('架空チャンネル');
+  await expect(page.locator('.program-picked-tag')).toHaveText('登録済み');
 
   // 取得できない動画はメッセージを出して手入力に任せる
   await page.getByLabel('リンク1の URL').fill('https://www.youtube.com/watch?v=PRIVATE0001');

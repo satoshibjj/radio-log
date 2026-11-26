@@ -63,7 +63,10 @@ export interface AppearanceInput {
 
 export interface EpisodeLogInput {
   id?: string;
+  /** 登録済みの番組。newProgram を使う場合は '' */
   programId: string;
+  /** 登録されていない番組を手入力した場合：回の保存と同じトランザクションで番組も登録する（同名があればそれを使う） */
+  newProgram?: { name: string; station: string };
   /** 空文字なら日付なし */
   broadcastDate: string;
   memo: string;

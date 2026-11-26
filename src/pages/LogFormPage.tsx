@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { PersonListEditor, type PersonItem } from '../components/PersonListEditor';
 import { LinkListEditor } from '../components/LinkListEditor';
+import { ProgramPicker } from '../components/ProgramPicker';
+import { StationChips } from '../components/StationChips';
+import { matchStation } from '../lib/stations';
 import { useUi } from '../components/UiProvider';
 import { findSameDayLogs, saveEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { compareLogsDesc, errorMessage, formatLogDate, formatYmd, isValidLogDate, normalizeForSearch, todayLocal } from '../lib/util';
 import { linksOf } from '../lib/links';
-import type { YouTubeInfo } from '../lib/external';
+import type { PodcastResult, YouTubeInfo } from '../lib/external';
 import type { EpisodeLink } from '../db/types';
 import { rankFrequentPersons } from '../lib/suggest';
 import { resolvePendingPerson } from '../lib/pendingPerson';
@@ -27,6 +30,10 @@ export function LogFormPage() {
   const original = useMemo(() => (id ? data.episodeLogs.find((l) => l.id === id) : undefined), [data.episodeLogs, id]);
 
   const [programId, setProgramId] = useState('');
+  /** 番組欄の文字（登録済みの番組名、または手入力した新しい番組名） */
+  const [programText, setProgramText] = useState('');
+  /** 新しい番組の放送局・配信元 */
+  const [newStation, setNewStation] = useState('');
   const [date, setDate] = useState(todayLocal());
   const [items, setItems] = useState<PersonItem[]>([]);
   const [memo, setMemo] = useState('');
@@ -48,6 +55,7 @@ export function LogFormPage() {
     if (isEdit) {
       if (!original) return;
       setProgramId(original.programId);
+      setProgramText(programById.get(original.programId)?.name ?? '');
       setDate(original.broadcastDate);
       setMemo(original.memo);
       setLinks(linksOf(original));
@@ -57,6 +65,7 @@ export function LogFormPage() {
       const qp = params.get('programId');
       if (qp && programById.has(qp)) {
         setProgramId(qp);
+        setProgramText(programById.get(qp)?.name ?? '');
         setItems(defaultsOf(qp));
       }
       setDate(todayLocal());
@@ -108,17 +117,14 @@ export function LogFormPage() {
     [data.episodeLogs, appearancesByLog, programId, items, personById, id],
   );
 
-  const sortedPrograms = useMemo(
-    () => [...data.programs].sort((a, b) => a.name.localeCompare(b.name, 'ja')),
-    [data.programs],
-  );
-
   const setPendingPerson = useCallback((text: string) => {
     pendingPerson.current = text;
   }, []);
 
-  const changeProgram = (pid: string) => {
+  /** 登録済みの番組を選ぶ（text を渡さなければ番組名を入れる） */
+  const changeProgram = (pid: string, text?: string) => {
     setProgramId(pid);
+    if (pid) setProgramText(text ?? programById.get(pid)?.name ?? '');
     setErrors((e) => ({ ...e, program: undefined }));
     if (!pid) return;
     const defaults = defaultsOf(pid);
@@ -142,23 +148,12 @@ export function LogFormPage() {
     );
   }
 
-  if (!loading && data.programs.length === 0) {
-    return (
-      <>
-        <PageHeader title="また聴きたい回を追加" kicker="NEW REPEAT" back />
-        <EmptyState title="先に番組を登録してください">
-          <Link to="/programs/new" className="btn btn-primary">
-            番組を登録
-          </Link>
-        </EmptyState>
-      </>
-    );
-  }
-
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: typeof errors = {};
-    if (!programId) errs.program = '番組を選択してください';
+    const newProgramName = programId ? '' : programText.trim();
+    if (!programId && !newProgramName) errs.program = '番組を選ぶか、番組名を入力してください';
+    else if (!programId && /^(https?:\/\/|www\.)/i.test(newProgramName)) errs.program = '番組名に URL が入っています。番組名を入力してください';
     if (!isValidLogDate(date)) errs.date = '放送・配信日を正しく入力してください（分からなければ「日付なし」）';
     setErrors(errs);
     if (errs.program || errs.date) return;
@@ -167,7 +162,7 @@ export function LogFormPage() {
     try {
       // 同一番組×同一放送日の重複チェック（新規作成時、または番組/放送日を変更した時）
       const keyChanged = !original || original.programId !== programId || original.broadcastDate !== date;
-      if (keyChanged && date) {
+      if (keyChanged && date && programId) {
         const dups = await findSameDayLogs(programId, date, id);
         if (dups.length > 0) {
           const ok = await confirm({
@@ -195,11 +190,21 @@ export function LogFormPage() {
         finalItems = [...finalItems, { personId: pending.personId, role: 'guest' }];
         setItems(finalItems);
       }
-      const saved = await saveEpisodeLog({ id, programId, broadcastDate: date, memo, links, appearances: finalItems });
+      const saved = await saveEpisodeLog({
+        id,
+        programId,
+        newProgram: programId ? undefined : { name: newProgramName, station: newStation },
+        broadcastDate: date,
+        memo,
+        links,
+        appearances: finalItems,
+      });
       await reload();
-      toast(
-        `${isEdit ? 'リピート回を更新しました' : 'リピート回を記録しました'}${pending && finalItems !== items ? `（出演者に「${pending.name}」を追加）` : ''}`,
-      );
+      const notes = [
+        saved.createdProgram ? `番組「${saved.createdProgram.name}」も登録` : '',
+        pending && finalItems !== items ? `出演者に「${pending.name}」を追加` : '',
+      ].filter(Boolean);
+      toast(`${isEdit ? 'リピート回を更新しました' : 'リピート回を記録しました'}${notes.length ? `（${notes.join('・')}）` : ''}`);
       navigate(`/logs/${saved.id}`, { replace: true });
     } catch (err) {
       setSaving(false);
@@ -215,12 +220,33 @@ export function LogFormPage() {
     if (match) {
       changeProgram(match.id);
       toast(`番組「${match.name}」を選びました`);
-    } else {
-      toast(`チャンネル「${info.channel}」は番組に未登録です（番組の登録で同じ名前にすると次から自動で選ばれます）`);
+    } else if (!programText.trim()) {
+      setProgramText(info.channel);
+      if (!newStation.trim()) setNewStation('YouTube');
+      toast(`番組に「${info.channel}」を入れました（新しい番組として登録されます）`);
     }
   };
 
-  const recentOthers = sortedPrograms.filter((p) => !recentProgramIds.includes(p.id));
+  /** 番組欄に文字を打った：登録済みと同じ名前ならその番組、違えば新しい番組 */
+  const onProgramText = (text: string, matchedId: string) => {
+    setProgramText(text);
+    setErrors((e) => ({ ...e, program: undefined }));
+    if (matchedId) {
+      if (matchedId !== programId) changeProgram(matchedId, text);
+    } else setProgramId('');
+  };
+
+  /** Apple Podcasts の候補を選んだ：番組名を入れ、提供者名が既知の局なら放送局も入れる */
+  const onPickPodcast = (r: PodcastResult) => {
+    setProgramId('');
+    setProgramText(r.name);
+    setErrors((e) => ({ ...e, program: undefined }));
+    const matched = newStation.trim() ? undefined : matchStation(r.artist, data.programs.map((p) => p.station));
+    if (matched) setNewStation(matched);
+    toast(matched ? `番組名と放送局（${matched}）を入力しました` : '番組名を入力しました');
+  };
+
+  const isNewProgram = !programId && programText.trim() !== '';
 
   return (
     <>
@@ -228,7 +254,7 @@ export function LogFormPage() {
       <form className="form" onSubmit={onSubmit} noValidate>
         <div className="field">
           <label className="field-label" htmlFor="lprogram">
-            番組 <span className="req">必須</span>
+            番組・チャンネル <span className="req">必須</span>
           </label>
           {recentProgramIds.length > 0 && (
             <div className="chips recent-chips" aria-label="最近の番組">
@@ -245,43 +271,31 @@ export function LogFormPage() {
               ))}
             </div>
           )}
-          <select
-            id="lprogram"
-            className={`input select ${errors.program ? 'has-error' : ''}`}
-            value={programId}
-            onChange={(e) => changeProgram(e.target.value)}
-          >
-            <option value="">番組を選択…</option>
-            {recentProgramIds.length > 0 ? (
-              <>
-                <optgroup label="最近の番組">
-                  {recentProgramIds.map((pid) => (
-                    <option key={pid} value={pid}>
-                      {programById.get(pid)?.name}
-                    </option>
-                  ))}
-                </optgroup>
-                {recentOthers.length > 0 && (
-                  <optgroup label="すべての番組">
-                    {recentOthers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                        {p.station ? `（${p.station}）` : ''}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </>
-            ) : (
-              sortedPrograms.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.station ? `（${p.station}）` : ''}
-                </option>
-              ))
-            )}
-          </select>
-          {errors.program && <p className="field-error">{errors.program}</p>}
+          <ProgramPicker
+            programs={data.programs}
+            text={programText}
+            programId={programId}
+            error={errors.program}
+            onTextChange={onProgramText}
+            onPickRegistered={(pid) => changeProgram(pid)}
+            onPickPodcast={onPickPodcast}
+          />
+          {isNewProgram && (
+            <div className="new-program-box">
+              <label className="field-label" htmlFor="lstation">
+                放送局・配信元 <span className="opt">任意</span>
+              </label>
+              <input
+                id="lstation"
+                className="input"
+                value={newStation}
+                onChange={(e) => setNewStation(e.target.value)}
+                placeholder="下から選ぶか、手入力"
+                autoComplete="off"
+              />
+              <StationChips value={newStation} onChange={setNewStation} />
+            </div>
+          )}
         </div>
 
         <div className="field">

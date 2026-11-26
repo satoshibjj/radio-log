@@ -9,9 +9,9 @@ export function GuideContent() {
         <li className="card guide-step">
           <span className="guide-num">1</span>
           <div>
-            <h2>番組を登録する（最初だけ）</h2>
+            <h2>番組を登録する（しなくても OK）</h2>
             <p>
-              下の<strong>「番組」</strong>→「＋新規」で番組名を入れると候補が出るので選び、放送局をタップします。YouTube なら動画の URL を貼るとチャンネル名を入力でき、配信元は「YouTube」などをタップします。いつもの出演者も入れておくと、次から自動で入ります。
+              下の<strong>「番組」</strong>→「＋新規」で番組名を入れると候補が出るので選び、放送局をタップします。YouTube なら動画の URL を貼るとチャンネル名を入力でき、配信元は「YouTube」などをタップします。いつもの出演者も入れておくと、次から自動で入ります。回を追加する画面で番組名を打つだけでも登録できます。
             </p>
             <Link to="/programs/new" className="btn btn-small">
               番組を登録する
@@ -23,7 +23,7 @@ export function GuideContent() {
           <div>
             <h2>また聴きたい回を追加する</h2>
             <p>
-              真ん中の赤い<strong>「＋ 回を追加」</strong>から、番組と放送・配信日を選び、なぜまた聴きたいかをメモします。radiko・Spotify・YouTube などのリンクを貼っておくと、あとで1タップで開けます（日付・リンクはどちらも任意）。
+              真ん中の赤い<strong>「＋ 回を追加」</strong>から、番組（登録済みから選ぶ・打って候補から選ぶ・そのまま手入力のどれでも）と放送・配信日を入れ、なぜまた聴きたいかをメモします。radiko・Spotify・YouTube などのリンクを貼っておくと、あとで1タップで開けます（日付・リンクはどちらも任意）。
             </p>
           </div>
         </li>

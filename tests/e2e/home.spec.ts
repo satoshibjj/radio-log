@@ -5,7 +5,7 @@ test('はじめての画面：紹介・最初の一歩・ガイドが開いて�
   const errors = collectErrors(page);
   await open(page, '/');
   await expect(page.getByText('ラジオの「また聴きたい回」をストックするアプリ')).toBeVisible();
-  await expect(page.getByRole('link', { name: '① まず番組を登録する' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '＋ また聴きたい回を追加' })).toBeVisible();
   await expect(page.locator('.home-guide')).toHaveAttribute('open', '');
   await expect(page.locator('.home-stats')).toHaveCount(0);
   await expect(page.locator('.bottom-nav .nav-item span, .nav-fab-label')).toHaveText(['ホーム', 'リピート帳', '回を追加', '番組', '出演者']);

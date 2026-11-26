@@ -2209,3 +2209,47 @@ a.card:active {
 .shared-error {
   white-space: pre-wrap;
 }
+
+/* ------------------------------------------------- 回の追加：番組欄（登録済み・候補・手入力） */
+.program-suggest {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.suggest-item.is-current {
+  background: var(--paper-2);
+  font-weight: 800;
+}
+
+.program-picked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.program-picked-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.program-picked.is-new .program-picked-tag {
+  background: var(--rust);
+}
+
+.new-program-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px dashed var(--rust);
+  border-radius: var(--radius-sm);
+  background: #fff6ee;
+}

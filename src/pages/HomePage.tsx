@@ -5,7 +5,9 @@ import { GuideContent } from '../components/GuideContent';
 import { LogCard } from '../components/LogCard';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useData } from '../state/DataContext';
-import { getLastBackupAt } from '../lib/backupActions';
+import { getLastBackupAt, shareBackup } from '../lib/backupActions';
+import { useUi } from '../components/UiProvider';
+import { errorMessage } from '../lib/util';
 
 const RECENT_COUNT = 3;
 /** この件数未満のうちは使い方ガイドを開いた状態で表示 */
@@ -24,7 +26,19 @@ export function HomePage() {
     () => [...logs].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0)).slice(0, RECENT_COUNT),
     [logs],
   );
-  const lastBackup = getLastBackupAt();
+  const { toast } = useUi();
+  const [lastBackup, setLastBackup] = useState<Date | null>(() => getLastBackupAt());
+
+  const backupNow = async () => {
+    try {
+      const r = await shareBackup(data);
+      if (r === 'cancelled') return;
+      setLastBackup(getLastBackupAt());
+      toast(r === 'shared' ? 'バックアップを送りました' : 'バックアップを保存しました');
+    } catch (err) {
+      toast(errorMessage(err));
+    }
+  };
   const hasPrograms = data.programs.length > 0;
 
   const draw = () => {
@@ -100,6 +114,25 @@ export function HomePage() {
       </section>
       )}
 
+      <section className="card home-backup" aria-labelledby="home-backup-title">
+        <div className="home-backup-head">
+          <h2 id="home-backup-title">💾 データのバックアップ・復元</h2>
+          <span className="muted">
+            最後のバックアップ：{lastBackup ? lastBackup.toLocaleDateString('ja-JP') : 'まだありません'}
+          </span>
+        </div>
+        <div className="home-backup-actions">
+          {logs.length > 0 && (
+            <button type="button" className="btn btn-small btn-primary" onClick={() => void backupNow()}>
+              📤 今すぐ送る
+            </button>
+          )}
+          <Link to="/data" className="btn btn-small">
+            保存・復元の画面へ ›
+          </Link>
+        </div>
+      </section>
+
       {!loading && (
         <details className="home-guide card" open={logs.length < GUIDE_OPEN_UNDER}>
           <summary>
@@ -114,15 +147,6 @@ export function HomePage() {
         </details>
       )}
 
-      <Link to="/data" className="card home-data">
-        <span className="home-data-main">
-          <strong>データのバックアップ・復元</strong>
-          <span className="muted">
-            最後のバックアップ：{lastBackup ? lastBackup.toLocaleDateString('ja-JP') : 'まだありません'}
-          </span>
-        </span>
-        <span aria-hidden="true">›</span>
-      </Link>
 
       {picked && (
         <RandomPickModal

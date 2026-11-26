@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/Layout';
 import { useUi } from '../components/UiProvider';
 import { ShareImageModal } from '../components/ShareImageModal';
+import { createShareImage, shareFileName } from '../lib/shareImage';
 import { deleteEpisodeLog } from '../db/repo';
 import { useData } from '../state/DataContext';
 import { errorMessage, formatYmd } from '../lib/util';
@@ -118,13 +119,17 @@ export function LogDetailPage() {
       {sharing && (
         <ShareImageModal
           onClose={() => setSharing(false)}
-          data={{
-            programName: program?.name ?? '（不明な番組）',
-            station: program?.station ?? '',
-            broadcastDate: log.broadcastDate,
-            memo: log.memo,
-            cast: apps.map((a) => ({ name: personById.get(a.personId)?.name ?? '?', role: a.role })),
-          }}
+          fileName={shareFileName(log.broadcastDate)}
+          title={`${program?.name ?? ''} ${log.broadcastDate}`}
+          create={() =>
+            createShareImage({
+              programName: program?.name ?? '（不明な番組）',
+              station: program?.station ?? '',
+              broadcastDate: log.broadcastDate,
+              memo: log.memo,
+              cast: apps.map((a) => ({ name: personById.get(a.personId)?.name ?? '?', role: a.role })),
+            })
+          }
         />
       )}
     </>

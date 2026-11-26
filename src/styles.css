@@ -1751,3 +1751,22 @@ a.card:active {
 .section-card .btn + .btn {
   margin-top: 8px;
 }
+
+.sort-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.sort-row .sort-bar {
+  padding-bottom: 4px;
+}
+
+.top-share-btn {
+  align-self: flex-end;
+  border-style: dashed;
+  border-color: var(--brass);
+  background: #fbf3dc;
+  color: #6b4e05;
+}

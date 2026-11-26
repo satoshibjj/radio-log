@@ -230,12 +230,8 @@ function hashString(s: string): number {
   return h;
 }
 
-export function drawShareCard(canvas: HTMLCanvasElement, d: ShareCardData): void {
-  canvas.width = SHARE_W;
-  canvas.height = SHARE_H;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('この端末では画像を作成できません（Canvas 非対応）。');
-
+/** 背景（クラフト紙）とインデックスカードの枠 */
+function drawCardFrame(ctx: CanvasRenderingContext2D): { cardX: number; cardY: number; cardW: number; cardH: number } {
   // 背景（クラフト紙）
   ctx.fillStyle = C.paper2;
   ctx.fillRect(0, 0, SHARE_W, SHARE_H);
@@ -265,6 +261,48 @@ export function drawShareCard(canvas: HTMLCanvasElement, d: ShareCardData): void
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = C.line;
   ctx.stroke();
+  return { cardX, cardY, cardW, cardH };
+}
+
+/** フッター（アプリ名クレジット） */
+function drawFooter(ctx: CanvasRenderingContext2D, px: number, pw: number, fy: number): void {
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px, fy - 30);
+  ctx.lineTo(px + pw, fy - 30);
+  ctx.stroke();
+  // 小さなダイヤル
+  ctx.beginPath();
+  ctx.arc(px + 18, fy, 16, 0, Math.PI * 2);
+  ctx.fillStyle = C.brass;
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = C.ink;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(px + 18, fy);
+  ctx.lineTo(px + 26, fy - 11);
+  ctx.stroke();
+  ctx.fillStyle = C.ink;
+  ctx.font = font(700, 26, DISPLAY);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Radio Log', px + 46, fy + 1);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = C.inkMute;
+  ctx.font = font(700, 20, DISPLAY);
+  ctx.fillText('KEEP IT ON REPEAT', px + pw, fy + 1);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+export function drawShareCard(canvas: HTMLCanvasElement, d: ShareCardData): void {
+  canvas.width = SHARE_W;
+  canvas.height = SHARE_H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('この端末では画像を作成できません（Canvas 非対応）。');
+
+  const { cardX, cardY, cardW, cardH } = drawCardFrame(ctx);
 
   const px = cardX + 48; // 内側左端
   const pw = cardW - 96; // 内側幅
@@ -405,36 +443,7 @@ export function drawShareCard(canvas: HTMLCanvasElement, d: ShareCardData): void
     lines.forEach((l, i) => ctx.fillText(l, px + 4, y + lineH * (i + 1) - 13));
   }
 
-  // フッター（アプリ名クレジット）
-  const fy = cardY + cardH - 62;
-  ctx.strokeStyle = C.ink;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(px, fy - 30);
-  ctx.lineTo(px + pw, fy - 30);
-  ctx.stroke();
-  // 小さなダイヤル
-  ctx.beginPath();
-  ctx.arc(px + 18, fy, 16, 0, Math.PI * 2);
-  ctx.fillStyle = C.brass;
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = C.ink;
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(px + 18, fy);
-  ctx.lineTo(px + 26, fy - 11);
-  ctx.stroke();
-  ctx.fillStyle = C.ink;
-  ctx.font = font(700, 26, DISPLAY);
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Radio Log', px + 46, fy + 1);
-  ctx.textAlign = 'right';
-  ctx.fillStyle = C.inkMute;
-  ctx.font = font(700, 20, DISPLAY);
-  ctx.fillText('KEEP IT ON REPEAT', px + pw, fy + 1);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
+  drawFooter(ctx, px, pw, cardY + cardH - 62);
 }
 
 export function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
@@ -457,4 +466,161 @@ export async function createShareImage(d: ShareCardData): Promise<Blob> {
 
 export function shareFileName(broadcastDate: string): string {
   return `radio-log-${broadcastDate}.png`;
+}
+
+// ================================================================ リピート帳 TOP5
+
+export interface TopCardItem {
+  programName: string;
+  station: string;
+  broadcastDate: string;
+  castNames: string[];
+  memo: string;
+}
+
+export interface TopCardData {
+  items: TopCardItem[];
+  /** 並び順（例：新しい順） */
+  sortLabel: string;
+  /** 対象の説明（例：全 12 件から／出演者：A・B） */
+  scopeLabel: string;
+}
+
+/** 1行に収まらなければ末尾を「…」 */
+function fitLine(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  return wrapText(ctx, text.replace(/\s+/g, ' '), maxWidth, 1).lines[0] ?? '';
+}
+
+export function drawTopCard(canvas: HTMLCanvasElement, d: TopCardData): void {
+  canvas.width = SHARE_W;
+  canvas.height = SHARE_H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('この端末では画像を作成できません（Canvas 非対応）。');
+  const { cardX, cardY, cardW, cardH } = drawCardFrame(ctx);
+  const px = cardX + 48;
+  const pw = cardW - 96;
+  let y = cardY + 44;
+
+  // ヘッダー
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = C.rust;
+  ctx.font = font(700, 26, DISPLAY);
+  ctx.fillText(`★ REPEAT TOP ${d.items.length}`, px, y + 26);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = C.inkMute;
+  ctx.font = font(700, 22);
+  ctx.fillText(d.sortLabel, px + pw, y + 26);
+  ctx.textAlign = 'left';
+  y += 48;
+
+  drawTuningScale(ctx, px, y, pw, hashString(d.items.map((i) => i.broadcastDate).join()));
+  y += 132 + 22;
+
+  // タイトル＋対象
+  ctx.fillStyle = C.ink;
+  ctx.font = font(800, 44);
+  ctx.fillText('また聴きたい回', px, y + 44);
+  ctx.fillStyle = C.inkSoft;
+  ctx.font = font(700, 24);
+  ctx.textAlign = 'right';
+  ctx.fillText(fitLine(ctx, d.scopeLabel, pw * 0.5), px + pw, y + 42);
+  ctx.textAlign = 'left';
+  y += 66;
+
+  // 行
+  const footerTop = cardY + cardH - 100;
+  const rows = Math.max(1, d.items.length);
+  const rowH = Math.min(176, (footerTop - y) / 5);
+  const textX = px + 100;
+  const textW = pw - 100;
+  d.items.forEach((it, i) => {
+    const top = y + rowH * i;
+    // 区切り線
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.moveTo(px, top);
+    ctx.lineTo(px + pw, top);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 順位バッジ
+    const cy = top + rowH / 2;
+    ctx.beginPath();
+    ctx.arc(px + 38, cy, 36, 0, Math.PI * 2);
+    ctx.fillStyle = i === 0 ? C.rust : i < 3 ? C.brass : C.paper2;
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = C.ink;
+    ctx.stroke();
+    ctx.fillStyle = i < 3 ? '#FFFFFF' : C.ink;
+    ctx.font = font(700, 38, DISPLAY);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), px + 38, cy + 2);
+    ctx.textAlign = 'left';
+
+    // 1行目：放送日＋放送局
+    let ly = top + rowH * 0.27;
+    ctx.fillStyle = C.rustDark;
+    ctx.font = font(700, 26, DISPLAY);
+    const [yy, mm, dd] = it.broadcastDate.split('-').map(Number);
+    const wd = Number.isFinite(yy) ? WEEK_EN[new Date(yy, mm - 1, dd).getDay()] : '';
+    const dateText = `${it.broadcastDate}${wd ? ` ${wd}` : ''}`;
+    ctx.fillText(dateText, textX, ly);
+    if (it.station.trim()) {
+      const sx = textX + ctx.measureText(dateText).width + 16;
+      ctx.font = font(800, 20);
+      const label = fitLine(ctx, it.station, Math.max(60, textX + textW - sx - 24));
+      const sw = ctx.measureText(label).width + 20;
+      roundRect(ctx, sx, ly - 17, sw, 34, 6);
+      ctx.fillStyle = '#F8EDCF';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = C.brass;
+      ctx.stroke();
+      ctx.fillStyle = '#6B4E05';
+      ctx.fillText(label, sx + 10, ly + 1);
+    }
+
+    // 2行目：番組名
+    ly = top + rowH * 0.55;
+    ctx.fillStyle = C.ink;
+    ctx.font = font(800, 36);
+    ctx.fillText(fitLine(ctx, it.programName, textW), textX, ly);
+
+    // 3行目：出演者／メモ
+    ly = top + rowH * 0.82;
+    const cast = it.castNames.length > 3 ? `${it.castNames.slice(0, 3).join('・')} ほか${it.castNames.length - 3}名` : it.castNames.join('・');
+    const sub = [cast, it.memo.trim()].filter(Boolean).join('　／　');
+    if (sub) {
+      ctx.fillStyle = C.inkSoft;
+      ctx.font = font(500, 24);
+      ctx.fillText(fitLine(ctx, sub, textW), textX, ly);
+    }
+    ctx.textBaseline = 'alphabetic';
+  });
+  // 最後の区切り
+  ctx.strokeStyle = C.line;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 8]);
+  ctx.beginPath();
+  ctx.moveTo(px, y + rowH * rows);
+  ctx.lineTo(px + pw, y + rowH * rows);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  drawFooter(ctx, px, pw, cardY + cardH - 62);
+}
+
+export async function createTopImage(d: TopCardData): Promise<Blob> {
+  try {
+    await (document as Document & { fonts?: FontFaceSet }).fonts?.ready;
+  } catch {
+    /* noop */
+  }
+  const canvas = document.createElement('canvas');
+  drawTopCard(canvas, d);
+  return canvasToPngBlob(canvas);
 }

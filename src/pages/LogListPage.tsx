@@ -6,8 +6,10 @@ import { PersonPicker } from '../components/PersonPicker';
 import { RandomPickModal } from '../components/RandomPickModal';
 import { useUi } from '../components/UiProvider';
 import { BackupReminder } from '../components/BackupReminder';
+import { ShareImageModal } from '../components/ShareImageModal';
+import { createTopImage } from '../lib/shareImage';
 import { useData } from '../state/DataContext';
-import { compareLogsDesc } from '../lib/util';
+import { compareLogsDesc, todayLocal } from '../lib/util';
 import type { EpisodeLog } from '../db/types';
 
 type SortKey = 'new' | 'old' | 'program' | 'added';
@@ -38,6 +40,7 @@ export function LogListPage() {
   const [drawCount, setDrawCount] = useState(0);
   /** 直前に選ばれた回（連続で同じ回を出さないため） */
   const lastPickedId = useRef<string | null>(null);
+  const [sharingTop, setSharingTop] = useState(false);
 
   // URL の ?person=ID&person=ID で出演者フィルタを保持（S6 のチップから遷移可能）
   const selected = useMemo(
@@ -98,6 +101,29 @@ export function LogListPage() {
     }
     return [{ key: 'all', logs }];
   }, [logs, sort, programById]);
+
+  /** いま画面に表示している順の上位5件 */
+  const top5 = useMemo(() => groups.flatMap((g) => g.logs).slice(0, 5), [groups]);
+  const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? '';
+
+  const createTop = () =>
+    createTopImage({
+      sortLabel,
+      scopeLabel:
+        selected.length > 0
+          ? `出演：${selected.map((id) => personById.get(id)?.name ?? '?').join('・')}`
+          : `全 ${logs.length} 件から`,
+      items: top5.map((l) => {
+        const p = programById.get(l.programId);
+        return {
+          programName: p?.name ?? '（不明な番組）',
+          station: p?.station ?? '',
+          broadcastDate: l.broadcastDate,
+          memo: l.memo,
+          castNames: (appearancesByLog.get(l.id) ?? []).map((a) => personById.get(a.personId)?.name ?? '?'),
+        };
+      }),
+    });
 
   const filtered = selected.length > 0;
   /** まだ1件も無い（はじめての状態） */
@@ -201,6 +227,7 @@ export function LogListPage() {
         )
       ) : (
         <>
+          <div className="sort-row">
           <div className="sort-bar" role="group" aria-label="並び順">
             {SORTS.map((s) => (
               <button
@@ -213,6 +240,14 @@ export function LogListPage() {
                 {s.label}
               </button>
             ))}
+          </div>
+            <button
+              type="button"
+              className="btn btn-small top-share-btn"
+              onClick={() => setSharingTop(true)}
+            >
+              📷 上位{top5.length}件をシェア
+            </button>
           </div>
           {groups.map((g) => (
             <section key={g.key} className="log-group">
@@ -248,6 +283,16 @@ export function LogListPage() {
           <span className="random-fab-sub">{filtered ? `絞り込み中 ${logs.length}件から` : `全${logs.length}件から`}</span>
         </button>
       </div>
+      )}
+
+      {sharingTop && top5.length > 0 && (
+        <ShareImageModal
+          heading={`上位${top5.length}件のシェア画像`}
+          title={`Radio Log また聴きたい回 TOP${top5.length}`}
+          fileName={`radio-log-top${top5.length}-${todayLocal()}.png`}
+          create={createTop}
+          onClose={() => setSharingTop(false)}
+        />
       )}
 
       {picked && (

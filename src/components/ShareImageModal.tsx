@@ -1,26 +1,29 @@
 import { useEffect, useState } from 'react';
-import { createShareImage, shareFileName, type ShareCardData } from '../lib/shareImage';
 import { errorMessage } from '../lib/util';
 import { useUi } from './UiProvider';
 
 interface Props {
-  data: ShareCardData;
+  /** 画像を作る関数（モーダルを開いた時に1回呼ぶ） */
+  create: () => Promise<Blob>;
+  fileName: string;
+  /** 共有時のタイトル・画像の説明 */
+  title: string;
+  heading?: string;
   onClose: () => void;
 }
 
-/** S6：シェア画像のプレビュー・保存・共有 */
-export function ShareImageModal({ data, onClose }: Props) {
+/** シェア画像のプレビュー・保存・共有（S6 の1回分、リピート帳の TOP5） */
+export function ShareImageModal({ create, fileName, title, heading = 'シェア画像', onClose }: Props) {
   const { toast } = useUi();
   const [blob, setBlob] = useState<Blob | null>(null);
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const [canShareFile, setCanShareFile] = useState(false);
-  const fileName = shareFileName(data.broadcastDate);
 
   useEffect(() => {
     let revoked = false;
     let objectUrl = '';
-    createShareImage(data)
+    create()
       .then((b) => {
         if (revoked) return;
         objectUrl = URL.createObjectURL(b);
@@ -38,7 +41,7 @@ export function ShareImageModal({ data, onClose }: Props) {
       revoked = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-    // data はモーダル表示中に変わらない
+    // create はモーダル表示中に変わらない
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -63,7 +66,7 @@ export function ShareImageModal({ data, onClose }: Props) {
     if (!blob) return;
     const file = new File([blob], fileName, { type: 'image/png' });
     try {
-      await navigator.share({ files: [file], title: data.programName });
+      await navigator.share({ files: [file], title });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return; // ユーザーがキャンセル
       toast('共有できなかったため、画像を保存します');
@@ -81,11 +84,11 @@ export function ShareImageModal({ data, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="share-title" className="modal-title">
-          シェア画像
+          {heading}
         </h2>
         <div className="share-preview">
           {url ? (
-            <img src={url} alt={`${data.programName} ${data.broadcastDate} のシェア画像`} width={1080} height={1350} />
+            <img src={url} alt={title} width={1080} height={1350} />
           ) : error ? (
             <p className="field-error">{error}</p>
           ) : (

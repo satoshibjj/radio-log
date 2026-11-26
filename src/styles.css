@@ -2301,6 +2301,7 @@ a.card:active {
   --danger: #f09595;
   --warn: #fac775;
   --note: #e9d6a3;
+  --mint-text: #9fe1cb;
   color-scheme: dark;
 }
 
@@ -2334,6 +2335,7 @@ a.card:active {
   --danger: #9e2a1a;
   --warn: #8a5a00;
   --note: #6b4e05;
+  --mint-text: #0f6e56;
   color: var(--ink);
   color-scheme: light;
 }
@@ -2369,6 +2371,19 @@ body {
 .btn {
   background: transparent;
   border-color: var(--ink);
+}
+
+.btn-assist,
+.top-share-btn {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--mint-text);
+  color: var(--mint-text);
+}
+
+.date-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .btn-primary {

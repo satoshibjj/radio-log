@@ -38,6 +38,9 @@ test('スクリーンショット（主要画面）', async ({ page, context }) 
   await shot('00-home-empty');
   await seed(page, DATA, '/');
   await shot('01-home');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'screenshots/01b-home-bottom.jpg', type: 'jpeg', quality: 55 });
   await open(page, '/logs');
   await shot('02-logs');
   await page.getByRole('button', { name: '📨 選んでシェア' }).click();

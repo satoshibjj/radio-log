@@ -33,6 +33,8 @@ npm run test:e2e   # E2E テスト（build 済みの dist を vite preview で�
 ```
 
 - E2E は `tests/e2e/*.spec.ts`。GitHub Actions でデプロイ前に実行し、失敗したらデプロイしない（レポートは Actions の Artifacts「playwright-report」）。
+- `main` 以外のブランチに push すると `ci.yml` が build＋E2E だけを実行する（公開しない）。手元で npm が使えないときや大きな変更は、ブランチで緑を確認してから `main` に入れる。
+- スキーマは v2（`episodeLogs.links`、`broadcastDate` の空文字＝日付なし）。リンクは http/https のみ（`src/lib/links.ts`）。
 - テストデータは `tests/e2e/helpers.ts` の `seed()` で IndexedDB に直接入れる（架空データのみ）。外部 API は `mockExternal()`、共有は `mockShare()` でモック。
 - 機能を足したら対応するテストも追加・更新する。
 

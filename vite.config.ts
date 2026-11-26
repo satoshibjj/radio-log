@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// GitHub Pages: https://musclestrong1.github.io/radio-log/
+// GitHub Pages: https://satoshibjj.github.io/radio-log/
 const BASE = '/radio-log/';
 
 export default defineConfig({

@@ -3,7 +3,7 @@
 また聴き返したいラジオの放送回だけを厳選してストックする、個人用の PWA です。
 放送日順・番組別・出演者別（AND 絞り込み）で見返せます。
 
-公開URL: https://musclestrong1.github.io/radio-log/
+公開URL: https://satoshibjj.github.io/radio-log/
 
 - **サーバー不要**：データはブラウザの IndexedDB（この端末内）にのみ保存されます。外部送信はしません。
 - **オフライン対応**：ホーム画面に追加するとアプリとして起動でき、電波がなくても使えます。

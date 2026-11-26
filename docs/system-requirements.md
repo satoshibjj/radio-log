@@ -233,7 +233,7 @@ DB 名 `radio_log_db`、バージョン **1**（`src/db/idb.ts` の `DB_VERSION`
 
 ## 10. 公開・運用
 
-- 公開 URL：https://satoshibjj.github.io/radio-log/ （リポジトリ https://github.com/satoshibjj/radio-log 。旧ユーザー名 MuscleStrong1 から改名済み）
+- 公開 URL：https://satoshibjj.github.io/radio-log/ （リポジトリ https://github.com/satoshibjj/radio-log）
 - `vite.config.ts` の `base` は `/radio-log/`（ユーザー名に依存しない）。
 - デプロイ：`main` への push → Actions「Deploy to GitHub Pages」。初回のみ Settings → Pages → Source を「GitHub Actions」に。
 - URL（オリジン）を変えると別アプリ扱いになり、データは引き継がれない。変更前にバックアップ → 新 URL で復元。
@@ -273,7 +273,7 @@ DB 名 `radio_log_db`、バージョン **1**（`src/db/idb.ts` の `DB_VERSION`
 | 2026-11-26 | Spotify 検索・メール自動送信・有名番組データ同梱は不採用 | 7 章／USM「やらないと決めたこと」参照 |
 | 2026-11-26 | バックアップは共有シート方式＋14日リマインド | 無料・鍵不要・データが第三者を経由しない |
 | 2026-11-26 | 下部ナビは5枠、バックアップはホームのガイド上 | スマホ幅での押しやすさ |
-| 2026-11-26 | GitHub ユーザー名を satoshibjj に変更 | 公開 URL に旧名を出さないため |
+| 2026-11-26 | GitHub ユーザー名を satoshibjj に変更 | 公開 URL のユーザー名を変えるため |
 | 2026-11-26 | 出演者欄の未確定入力も保存時に反映 | 候補タップを忘れて名前が消える二度手間を防ぐ |
 | 2026-11-26 | E2E テスト（Playwright）をリポジトリに追加し、デプロイ前に実行 | 変更で既存機能が壊れたまま公開されるのを防ぐ |
 | 2026-11-26 | パスが変わったら画面を作り直す（`Routes` に `key=pathname`） | 編集→新規など同じ画面部品の間で入力内容を持ち越さない |

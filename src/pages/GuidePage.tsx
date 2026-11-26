@@ -77,7 +77,7 @@ export function GuidePage() {
         <details className="card">
           <summary>番組の検索で出てこない番組がある</summary>
           <p>
-            番組登録の「Podcast/番組を検索」は、<strong>Podcast で配信されている番組だけ</strong>が候補に出ます。radiko でしか聴けない番組などは出てこないので、番組名を手入力してください。一度登録すれば、次からは選ぶだけで済みます。
+            番組登録の「Podcast/番組を検索」は、<strong>Apple Podcasts にある番組だけ</strong>が候補に出ます。radiko でしか聴けない番組や、Spotify 独占配信の番組（オールナイトニッポンの一部など）は Spotify で聴けても出てこないので、番組名を手入力してください。一度登録すれば、次からは選ぶだけで済みます。
           </p>
         </details>
         <details className="card">

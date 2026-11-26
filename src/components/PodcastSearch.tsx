@@ -51,7 +51,7 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
   return (
     <div className="assist-panel">
       <p className="assist-note">
-        ※ Podcast で配信されている番組だけが候補に出ます。radiko でしか聴けない番組などは出ないので、そのときは番組名を手入力してください。
+        ※ Apple Podcasts にある番組だけが候補に出ます。radiko でしか聴けない番組や、Spotify 独占配信の番組（オールナイトニッポンの一部など）は出ないので、そのときは番組名を手入力してください。
       </p>
       <div className="assist-row">
         <input
@@ -77,7 +77,7 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
       {error && <p className="field-error">{error}</p>}
       {results && !loading && (
         results.length === 0 ? (
-          <p className="muted">見つかりませんでした。Podcast 配信のない番組（radiko のみ等）は出てこないので、番組名を手入力してください。一度登録すれば次からは選ぶだけです。</p>
+          <p className="muted">見つかりませんでした。Apple Podcasts に無い番組（radiko のみ・Spotify 独占など）は出てこないので、番組名を手入力してください。一度登録すれば次からは選ぶだけです。</p>
         ) : (
           <ul className="suggest assist-results">
             {results.map((r) => (
@@ -101,7 +101,7 @@ export function PodcastSearch({ initialTerm, onSelect }: Props) {
         )
       )}
       <div className="assist-footer">
-        <span className="muted">検索語のみ Apple（iTunes Search API）に送信されます</span>
+        <span className="muted">検索語のみ Apple（Apple Podcasts の検索）に送信されます</span>
         <button type="button" className="btn btn-small" onClick={() => setOpen(false)}>
           閉じる
         </button>
